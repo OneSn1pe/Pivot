@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
 // Import routes
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/authRoute');
 const candidateRoutes = require('./routes/candidates');
 const recruiterRoutes = require('./routes/recruiters');
 const roadmapRoutes = require('./routes/roadmaps');
