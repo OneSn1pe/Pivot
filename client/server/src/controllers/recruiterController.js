@@ -230,14 +230,20 @@ exports.getMatchingCandidates = async (req, res) => {
     
     console.log(`Found recruiter from company: ${recruiter.company}`);
     
-    // Make sure the Candidate model is properly loaded
-    const Candidate = mongoose.model('Candidate');
+    // Make sure the User model is properly loaded for the general query
+    const User = mongoose.model('User');
     
-    // First, get all candidates regardless of target companies
-    const allCandidates = await Candidate.find({})
-      .populate('resume')
-      .populate('roadmap')
-      .select('-password');
+    // Get all candidates from the system by role field instead of discriminator
+    // Focus on roadmap data and skills, minimize other candidate data for faster loading
+    const allCandidates = await User.find({role: 'candidate'})
+      .select('name email skills bookmarkedBy')
+      .populate({
+        path: 'roadmap',
+        populate: {
+          path: 'milestones',
+          model: 'Milestone'
+        }
+      });
     
     console.log(`Found ${allCandidates.length} total candidates in the system`);
     
@@ -252,7 +258,7 @@ exports.getMatchingCandidates = async (req, res) => {
     // Create a case-insensitive regex for the company name
     const companyRegex = new RegExp(recruiter.company, 'i');
     
-    // Mark candidates that are targeting this recruiter's company
+    // Add targeting information as a property but don't filter candidates
     const candidatesWithTargetingFlag = allCandidates.map(candidate => {
       const isTargetingCompany = candidate.targetCompanies && 
         candidate.targetCompanies.some(tc => 
@@ -266,18 +272,11 @@ exports.getMatchingCandidates = async (req, res) => {
       return candidateObj;
     });
     
-    // Count how many candidates are targeting this company
-    const targetingCandidatesCount = candidatesWithTargetingFlag.filter(c => c.isTargetingCompany).length;
-    console.log(`${targetingCandidatesCount} candidates are targeting company: ${recruiter.company}`);
-    
-    // Return all candidates, but with targeting information
+    // Return all candidates
     res.status(200).json({
-      message: targetingCandidatesCount > 0 ? 
-        `Found ${targetingCandidatesCount} candidates targeting your company specifically. Showing all ${allCandidates.length} candidates.` : 
-        `No candidates are targeting your company specifically. Showing all ${allCandidates.length} candidates.`,
+      message: `Showing all ${allCandidates.length} candidates in the system.`,
       candidates: candidatesWithTargetingFlag,
-      totalCount: allCandidates.length,
-      targetingCount: targetingCandidatesCount
+      totalCount: allCandidates.length
     });
     
   } catch (error) {
@@ -293,11 +292,11 @@ exports.bookmarkCandidate = async (req, res) => {
     console.log(`Attempting to bookmark candidate ${candidateId} with notes: ${notes}`);
 
     // Ensure models are properly loaded
-    const Candidate = mongoose.model('Candidate');
+    const User = mongoose.model('User');
     const Recruiter = mongoose.model('Recruiter');
 
     // Check if candidate exists
-    const candidate = await Candidate.findById(candidateId);
+    const candidate = await User.findOne({ _id: candidateId, role: 'candidate' });
     if (!candidate) {
       console.log(`Candidate with ID ${candidateId} not found`);
       return res.status(404).json({ message: 'Candidate not found' });
@@ -342,7 +341,7 @@ exports.bookmarkCandidate = async (req, res) => {
     console.log(`Successfully added bookmark to recruiter. Now updating candidate's bookmarkedBy list.`);
     
     // Add recruiter to candidate's bookmarkedBy list
-    await Candidate.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       candidateId,
       { $push: { bookmarkedBy: req.user.id } }
     );
@@ -360,6 +359,7 @@ exports.bookmarkCandidate = async (req, res) => {
 exports.removeBookmark = async (req, res) => {
   try {
     const { candidateId } = req.params;
+    const User = mongoose.model('User');
 
     // Remove bookmark
     await Recruiter.findByIdAndUpdate(
@@ -368,7 +368,7 @@ exports.removeBookmark = async (req, res) => {
     );
 
     // Remove recruiter from candidate's bookmarkedBy list
-    await Candidate.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       candidateId,
       { $pull: { bookmarkedBy: req.user.id } }
     );
@@ -384,6 +384,7 @@ exports.removeBookmark = async (req, res) => {
 exports.offerIncentive = async (req, res) => {
   try {
     const { candidateId, title, description, type, expiryDate } = req.body;
+    const User = mongoose.model('User');
 
     // Validate required fields
     if (!candidateId || !title || !description || !type) {
@@ -391,7 +392,7 @@ exports.offerIncentive = async (req, res) => {
     }
 
     // Check if candidate exists
-    const candidate = await Candidate.findById(candidateId);
+    const candidate = await User.findOne({ _id: candidateId, role: 'candidate' });
     if (!candidate) {
       return res.status(404).json({ message: 'Candidate not found' });
     }

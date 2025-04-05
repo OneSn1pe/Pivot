@@ -56,6 +56,9 @@ const Navbar = () => {
                     <Link to="/recruiter/candidates" className="text-gray-700 hover:text-blue-600">
                       Candidates
                     </Link>
+                    <Link to="/recruiter/bookmarked-candidates" className="text-gray-700 hover:text-blue-600">
+                      Bookmarked Candidates
+                    </Link>
                     <Link to="/recruiter/job-preferences" className="text-gray-700 hover:text-blue-600">
                       Job Preferences
                     </Link>
@@ -190,6 +193,13 @@ const Navbar = () => {
                     onClick={toggleMenu}
                   >
                     Candidates
+                  </Link>
+                  <Link
+                    to="/recruiter/bookmarked-candidates"
+                    className="block py-2 text-gray-700 hover:text-blue-600"
+                    onClick={toggleMenu}
+                  >
+                    Bookmarked Candidates
                   </Link>
                   <Link
                     to="/recruiter/job-preferences"

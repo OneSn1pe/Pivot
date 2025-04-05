@@ -4,6 +4,7 @@ import api from '../services/api';
 import { scoreCandidateCompatibility } from '../services/gpt';
 import AuthContext from '../contexts/AuthContext';
 import UserContext from '../contexts/UserContext';
+import { FaBookmark, FaRegBookmark } from 'react-icons/fa';
 
 const CandidateSearch = () => {
   const { currentUser } = useContext(AuthContext);
@@ -211,14 +212,32 @@ const CandidateSearch = () => {
                 <p className="text-gray-600">{selectedCandidate.email}</p>
               </div>
               
-              <button
-                onClick={() => setSelectedCandidate(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleToggleBookmark(selectedCandidate._id)}
+                  className={`p-2 rounded-full ${
+                    isBookmarked(selectedCandidate._id) 
+                      ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={isBookmarked(selectedCandidate._id) ? "Remove bookmark" : "Add to bookmarks"}
+                >
+                  {isBookmarked(selectedCandidate._id) ? (
+                    <FaBookmark size={18} />
+                  ) : (
+                    <FaRegBookmark size={18} />
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setSelectedCandidate(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             {/* Compatibility Score */}
@@ -260,7 +279,88 @@ const CandidateSearch = () => {
               </div>
             )}
             
-            {/* Skills */}
+            {/* Career Roadmap - Prominently Featured */}
+            {selectedCandidate.roadmap ? (
+              <div className="mb-8 border border-blue-200 rounded-lg p-6 bg-blue-50">
+                <h3 className="text-xl font-bold text-blue-800 mb-4">Career Roadmap</h3>
+                
+                {/* Roadmap Progress */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700 font-medium">Overall Progress</span>
+                    <span className="font-bold text-blue-800 text-lg">
+                      {calculateRoadmapProgress(selectedCandidate.roadmap)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-blue-600 h-3 rounded-full" 
+                      style={{ width: `${calculateRoadmapProgress(selectedCandidate.roadmap)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                {/* Milestones */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-blue-800">Milestones</h4>
+                  {selectedCandidate.roadmap.milestones && selectedCandidate.roadmap.milestones.map((milestone, index) => (
+                    <div key={index} className={`p-4 rounded-lg ${milestone.completed ? 'bg-green-100 border border-green-200' : 'bg-white border border-gray-200'}`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h5 className="font-medium">{milestone.title}</h5>
+                          <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs ${milestone.completed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'}`}>
+                          {milestone.completed ? 'Completed' : 'In Progress'}
+                        </div>
+                      </div>
+                      
+                      {/* Resources */}
+                      {milestone.resources && milestone.resources.length > 0 && (
+                        <div className="mt-3">
+                          <h6 className="text-xs font-medium text-gray-700">Resources:</h6>
+                          <ul className="mt-1 space-y-1">
+                            {milestone.resources.map((resource, i) => (
+                              <li key={i} className="text-xs text-blue-600 flex items-center">
+                                <span className="mr-1">•</span>
+                                {resource.url ? (
+                                  <a href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    {resource.title || resource.url}
+                                  </a>
+                                ) : (
+                                  <span>{resource.title}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Time Estimate */}
+                      {milestone.timeEstimate && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Estimated time: {milestone.timeEstimate.amount} {milestone.timeEstimate.unit}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Roadmap Notes/Summary */}
+                {selectedCandidate.roadmap.notes && (
+                  <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+                    <h4 className="font-semibold text-gray-800 mb-2">Career Path Notes</h4>
+                    <p className="text-sm text-gray-600">{selectedCandidate.roadmap.notes}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-gray-100 rounded-lg text-center">
+                <p className="text-gray-500">No career roadmap available</p>
+              </div>
+            )}
+            
+            {/* Skills - Still important for recruiters */}
             <div className="mb-6">
               <h3 className="font-semibold mb-2">Skills</h3>
               {selectedCandidate.skills && selectedCandidate.skills.length > 0 ? (
@@ -276,105 +376,43 @@ const CandidateSearch = () => {
               )}
             </div>
             
-            {/* Experience */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Experience</h3>
-              {selectedCandidate.experience && selectedCandidate.experience.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedCandidate.experience.map((exp, index) => (
-                    <div key={index} className="border-l-2 border-gray-200 pl-4">
-                      <h4 className="font-medium">{exp.position}</h4>
-                      <p className="text-gray-700">{exp.company}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(exp.startDate).toLocaleDateString()} - 
-                        {exp.current ? ' Present' : new Date(exp.endDate).toLocaleDateString()}
-                      </p>
-                      <p className="text-gray-600 mt-1">{exp.description}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No experience listed</p>
-              )}
-            </div>
-            
-            {/* Education */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Education</h3>
-              {selectedCandidate.education && selectedCandidate.education.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedCandidate.education.map((edu, index) => (
-                    <div key={index}>
-                      <h4 className="font-medium">{edu.degree} in {edu.field}</h4>
-                      <p className="text-gray-700">{edu.institution}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(edu.startDate).toLocaleDateString()} - 
-                        {edu.current ? ' Present' : new Date(edu.endDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No education listed</p>
-              )}
-            </div>
-            
-            {/* Target Companies */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Target Companies</h3>
-              {selectedCandidate.targetCompanies && selectedCandidate.targetCompanies.length > 0 ? (
-                <div className="space-y-2">
-                  {selectedCandidate.targetCompanies.map((target, index) => (
-                    <div key={index} className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-2 ${
-                        target.company.toLowerCase() === currentUser?.company?.toLowerCase() 
-                          ? 'bg-green-500' 
-                          : 'bg-gray-300'
-                      }`}></div>
-                      <span>
-                        {target.company} - {target.position}
-                        {target.priority && ` (Priority: ${target.priority})`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No target companies listed</p>
-              )}
-            </div>
-            
-            {/* Roadmap Progress */}
-            {selectedCandidate.roadmap && (
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Career Roadmap Progress</h3>
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700">Progress</span>
-                    <span className="font-medium">
-                      {calculateRoadmapProgress(selectedCandidate.roadmap)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-300 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
-                      style={{ width: `${calculateRoadmapProgress(selectedCandidate.roadmap)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {/* Bookmark Form */}
             <div className="border-t pt-4 mt-4">
+              <h3 className="font-semibold mb-3">Bookmark Candidate</h3>
+              
               {isBookmarked(selectedCandidate._id) ? (
-                <button
-                  onClick={() => handleToggleBookmark(selectedCandidate._id)}
-                  className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                >
-                  Remove from Bookmarks
-                </button>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center mb-3">
+                    <FaBookmark className="text-blue-600 mr-2" size={18} />
+                    <span className="font-medium text-blue-800">This candidate is bookmarked</span>
+                  </div>
+                  
+                  {bookmarkedCandidates.find(b => b.candidate._id === selectedCandidate._id)?.notes && (
+                    <div className="mb-3 bg-white p-3 rounded-md border border-blue-100">
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Your Notes:</h4>
+                      <p className="text-sm text-gray-600">
+                        {bookmarkedCandidates.find(b => b.candidate._id === selectedCandidate._id)?.notes}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={() => handleToggleBookmark(selectedCandidate._id)}
+                    className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center justify-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Remove from Bookmarks
+                  </button>
+                </div>
               ) : (
-                <div>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-3">
+                    <FaRegBookmark className="text-gray-600 mr-2" size={18} />
+                    <span className="font-medium text-gray-800">Save this candidate for later</span>
+                  </div>
+                  
                   <div className="mb-3">
                     <label htmlFor="bookmarkNotes" className="block text-gray-700 text-sm font-medium mb-1">
                       Bookmark Notes (optional)
@@ -390,12 +428,17 @@ const CandidateSearch = () => {
                   </div>
                   <button
                     onClick={() => handleToggleBookmark(selectedCandidate._id)}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
                   >
+                    <FaBookmark className="mr-1" />
                     Add to Bookmarks
                   </button>
                 </div>
               )}
+              
+              <div className="mt-3 text-sm text-gray-600">
+                <p>Bookmarked candidates can be accessed from your <a href="/recruiter/bookmarked-candidates" className="text-blue-600 hover:underline">Bookmarked Candidates</a> page.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -636,8 +679,21 @@ const CandidateSearch = () => {
                 </div>
                 
                 <div className="mt-2 flex justify-between text-sm text-gray-500">
-                  <div>
-                    Experience: {calculateYearsOfExperience(candidate.experience)} years
+                  <div className="flex items-center">
+                    {candidate.roadmap ? (
+                      <>
+                        <span className="mr-2">Career Progress:</span>
+                        <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${calculateRoadmapProgress(candidate.roadmap)}%` }}
+                          ></div>
+                        </div>
+                        <span>{calculateRoadmapProgress(candidate.roadmap)}%</span>
+                      </>
+                    ) : (
+                      <span>No roadmap available</span>
+                    )}
                   </div>
                   
                   <div className="flex space-x-2">
@@ -652,6 +708,25 @@ const CandidateSearch = () => {
                         Evaluate Fit
                       </button>
                     )}
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isBookmarked(candidate._id)) {
+                          handleToggleBookmark(candidate._id);
+                        } else {
+                          setSelectedCandidate(candidate);
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-800 flex items-center"
+                      title={isBookmarked(candidate._id) ? "Remove bookmark" : "Add to bookmarks"}
+                    >
+                      {isBookmarked(candidate._id) ? (
+                        <><FaBookmark className="mr-1" /> Bookmarked</>
+                      ) : (
+                        <><FaRegBookmark className="mr-1" /> Bookmark</>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

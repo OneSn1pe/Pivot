@@ -15,6 +15,7 @@ import CandidateSearch from './pages/CandidateSearch';
 import ResumeUpload from './pages/ResumeUpload';
 import JobPreferences from './pages/JobPreferences';
 import TargetCompanies from './pages/TargetCompanies';
+import BookmarkedCandidates from './pages/BookmarkedCandidates';
 import NotFound from './pages/NotFound';
 
 // Components
@@ -59,6 +60,7 @@ function App() {
                       <Route path="dashboard" element={<RecruiterDashboard />} />
                       <Route path="profile" element={<Profile />} />
                       <Route path="candidates" element={<CandidateSearch />} />
+                      <Route path="bookmarked-candidates" element={<BookmarkedCandidates />} />
                       <Route path="candidate-preferences" element={<JobPreferences />} />
                       <Route path="job-preferences" element={<JobPreferences />} />
                       <Route path="*" element={<Navigate to="/recruiter/dashboard" replace />} />
