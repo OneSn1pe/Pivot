@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/vercel-entry.js",
+      "src": "src/app-serverless.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "src/vercel-entry.js"
+      "dest": "src/app-serverless.js"
     },
     {
       "src": "/(.*)",
-      "dest": "src/vercel-entry.js"
+      "dest": "src/app-serverless.js"
     }
   ],
   "env": {

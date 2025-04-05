@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Deployment Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .box {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>PivotAI Vercel Deployment Test</h1>
+  
+  <div class="box">
+    <h2 class="success">Success! Your Frontend is Deployed</h2>
+    <p>If you can see this page, your frontend React app has been deployed to Vercel successfully.</p>
+  </div>
+
+  <div class="box">
+    <h2>Next Steps:</h2>
+    <ol>
+      <li>Go to the main app at <a href="/">Homepage</a></li>
+      <li>Make sure your backend API is correctly set up and deployed</li>
+      <li>Verify your environment variables are set properly</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h2>API Connection Test:</h2>
+    <p>Click the button below to test the connection to your backend API:</p>
+    <button id="test-api">Test API Connection</button>
+    <div id="api-result" style="margin-top: 10px;"></div>
+  </div>
+
+  <script>
+    document.getElementById("test-api").addEventListener("click", async () => {
+      const resultElement = document.getElementById("api-result");
+      resultElement.innerHTML = "Testing connection...";
+      
+      try {
+        // Replace with your actual API URL
+        const apiUrl = window.location.origin.includes("localhost") 
+          ? "http://localhost:5000/api/test"
+          : window.location.origin.replace(".vercel.app", "-server.vercel.app") + "/api/test";
+          
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        resultElement.innerHTML = `<div style="color: green;">✅ Connection successful! Response: ${JSON.stringify(data)}</div>`;
+      } catch (error) {
+        resultElement.innerHTML = `<div style="color: red;">❌ Connection failed: ${error.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
