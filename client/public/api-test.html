@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test</title>
+  <script>
+    async function testAPI() {
+      const result = document.getElementById("result");
+      const url = document.getElementById("apiUrl").value;
+      
+      try {
+        result.innerHTML = "Testing...";
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+        
+        const data = await response.json();
+        result.innerHTML = `Success: ${JSON.stringify(data)}`;
+      } catch (error) {
+        result.innerHTML = `Error: ${error.message}`;
+        console.error(error);
+      }
+    }
+
+    async function testAuth() {
+      const result = document.getElementById("result");
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const authUrl = document.getElementById("authUrl").value;
+      
+      try {
+        result.innerHTML = "Testing auth...";
+        const response = await fetch(authUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email, password, role: "candidate", name: "Test User" })
+        });
+        
+        const data = await response.json();
+        result.innerHTML = `Auth response: ${JSON.stringify(data)}`;
+      } catch (error) {
+        result.innerHTML = `Auth error: ${error.message}`;
+        console.error(error);
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>API Test</h1>
+  <div style="margin-bottom: 20px;">
+    <h2>Test Basic API Connectivity</h2>
+    <input 
+      type="text" 
+      id="apiUrl" 
+      value="https://pivotai-kruc5aaka-kaustubh-kislays-projects.vercel.app/api/test" 
+      style="width: 450px;"
+    >
+    <button onclick="testAPI()">Test API</button>
+  </div>
+
+  <div style="margin-bottom: 20px;">
+    <h2>Test Auth API</h2>
+    <div style="margin-bottom: 10px;">
+      <label>Email: </label>
+      <input type="email" id="email" value="test@example.com">
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label>Password: </label>
+      <input type="password" id="password" value="password123">
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label>Auth URL: </label>
+      <input 
+        type="text" 
+        id="authUrl" 
+        value="https://pivotai-kruc5aaka-kaustubh-kislays-projects.vercel.app/api/auth/register" 
+        style="width: 450px;"
+      >
+    </div>
+    <button onclick="testAuth()">Test Auth</button>
+  </div>
+
+  <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px;"></div>
+</body>
+</html>
