@@ -285,18 +285,127 @@ const CandidateSearch = () => {
                 <h3 className="text-xl font-bold text-blue-800 mb-4">Career Roadmap</h3>
                 
                 {/* Roadmap Progress */}
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700 font-medium">Overall Progress</span>
-                    <span className="font-bold text-blue-800 text-lg">
-                      {calculateRoadmapProgress(selectedCandidate.roadmap)}%
-                    </span>
+                <div className="mb-6 space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-700 font-medium">Career Progress</span>
+                      <span className="font-bold text-blue-800 text-lg">
+                        {calculateRoadmapProgress(selectedCandidate.roadmap).milestoneProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div 
+                        className="bg-blue-600 h-3 rounded-full" 
+                        style={{ width: `${calculateRoadmapProgress(selectedCandidate.roadmap).milestoneProgress}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-700 font-medium">Skill Building Progress</span>
+                      <span className="font-bold text-green-800 text-lg">
+                        {calculateRoadmapProgress(selectedCandidate.roadmap).skillProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div 
+                        className="bg-green-600 h-3 rounded-full" 
+                        style={{ width: `${calculateRoadmapProgress(selectedCandidate.roadmap).skillProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Candidate Timeline */}
+                <div className="mb-6">
+                  <h4 className="font-semibold text-blue-800 mb-3">Career Timeline</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-medium text-blue-800 mb-1">Timeline Status</h3>
+                      <p className="text-lg font-semibold">
+                        {calculateRoadmapProgress(selectedCandidate.roadmap).milestoneProgress >= 
+                          (calculateTimeProgress(selectedCandidate.roadmap) || 0) ? (
+                          <span className="text-green-600">On Track</span>
+                        ) : (
+                          <span className="text-yellow-600">Behind Schedule</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {calculateRemainingTime(selectedCandidate.roadmap)} months remaining
+                      </p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="font-medium text-green-800 mb-1">Milestones</h3>
+                      <p className="text-lg font-semibold">
+                        {selectedCandidate.roadmap.milestones.filter(m => m.completed).length} / {selectedCandidate.roadmap.milestones.length}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Milestones completed
+                      </p>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <h3 className="font-medium text-purple-800 mb-1">Estimated Completion</h3>
+                      <p className="text-lg font-semibold">
+                        {calculateEstimatedCompletionDate(selectedCandidate.roadmap)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Based on current progress
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                     <div 
-                      className="bg-blue-600 h-3 rounded-full" 
-                      style={{ width: `${calculateRoadmapProgress(selectedCandidate.roadmap)}%` }}
+                      className="bg-blue-600 h-2.5 rounded-full" 
+                      style={{ width: `${calculateTimeProgress(selectedCandidate.roadmap) || 0}%` }}
                     ></div>
+                  </div>
+                  
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Start</span>
+                    <span>Current: {calculateTimeProgress(selectedCandidate.roadmap) || 0}%</span>
+                    <span>Target</span>
+                  </div>
+                  
+                  {/* Visual Timeline */}
+                  <div className="mt-6 border-l-2 border-blue-200 pl-4 space-y-6">
+                    {sortedMilestones(selectedCandidate.roadmap).map((milestone, index) => (
+                      <div key={index} className="relative">
+                        <div className={`absolute -left-6 w-4 h-4 rounded-full ${
+                          milestone.completed ? 'bg-green-500' : 'bg-gray-300'
+                        } border-2 border-white`}></div>
+                        <div className={`pt-1 ${milestone.completed ? 'text-green-700' : 'text-gray-700'}`}>
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium">{milestone.title}</h4>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              milestone.completed 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {milestone.completed ? 'Completed' : 'Pending'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+                          <div className="flex items-center mt-1 text-xs text-gray-500">
+                            <span className={`px-2 py-1 rounded text-xs mr-2 ${
+                              milestone.type === 'project' ? 'bg-blue-100 text-blue-800' :
+                              milestone.type === 'skill' ? 'bg-green-100 text-green-800' :
+                              milestone.type === 'certification' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {milestone.type}
+                            </span>
+                            {milestone.timeEstimate && (
+                              <span>{milestone.timeEstimate.amount} {milestone.timeEstimate.unit}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 
@@ -449,11 +558,95 @@ const CandidateSearch = () => {
   // Calculate roadmap progress
   const calculateRoadmapProgress = (roadmap) => {
     if (!roadmap || !roadmap.milestones || roadmap.milestones.length === 0) {
-      return 0;
+      return {
+        milestoneProgress: 0,
+        skillProgress: 0
+      };
     }
     
     const completedMilestones = roadmap.milestones.filter(m => m.completed).length;
-    return Math.round((completedMilestones / roadmap.milestones.length) * 100);
+    const milestoneProgress = Math.round((completedMilestones / roadmap.milestones.length) * 100);
+    
+    // Calculate skill building progress
+    const skillMilestones = roadmap.milestones.filter(m => m.type === 'skill');
+    const skillProgress = skillMilestones.length > 0 
+      ? Math.round((skillMilestones.filter(m => m.completed).length / skillMilestones.length) * 100)
+      : 0;
+    
+    return {
+      milestoneProgress,
+      skillProgress
+    };
+  };
+  
+  // Calculate time progress
+  const calculateTimeProgress = (roadmap) => {
+    if (!roadmap || !roadmap.estimatedTimelineMonths <= 0) {
+      return 0;
+    }
+    
+    // Get roadmap creation date or assume it started 3 months ago if not available
+    const startDate = roadmap.createdAt ? new Date(roadmap.createdAt) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const currentDate = new Date();
+    const totalDuration = roadmap.estimatedTimelineMonths * 30 * 24 * 60 * 60 * 1000; // convert months to milliseconds
+    
+    const elapsedTime = currentDate - startDate;
+    const timeProgress = Math.min(100, Math.round((elapsedTime / totalDuration) * 100));
+    
+    return timeProgress;
+  };
+  
+  // Calculate remaining time in months
+  const calculateRemainingTime = (roadmap) => {
+    if (!roadmap || !roadmap.estimatedTimelineMonths) {
+      return 0;
+    }
+    
+    const startDate = roadmap.createdAt ? new Date(roadmap.createdAt) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const currentDate = new Date();
+    const totalMonths = roadmap.estimatedTimelineMonths;
+    
+    // Calculate elapsed months (approximate)
+    const elapsedMonths = (currentDate - startDate) / (30 * 24 * 60 * 60 * 1000);
+    const remainingMonths = Math.max(0, totalMonths - elapsedMonths);
+    
+    return Math.round(remainingMonths);
+  };
+  
+  // Calculate estimated completion date
+  const calculateEstimatedCompletionDate = (roadmap) => {
+    if (!roadmap || !roadmap.estimatedTimelineMonths) {
+      return 'Not available';
+    }
+    
+    const startDate = roadmap.createdAt ? new Date(roadmap.createdAt) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const currentDate = new Date();
+    const totalMonths = roadmap.estimatedTimelineMonths;
+    
+    // Calculate completion date based on current progress and expected timeline
+    const progress = calculateRoadmapProgress(roadmap).milestoneProgress / 100;
+    const progressRate = progress / calculateTimeProgress(roadmap) || 1;
+    
+    // Adjust remaining time based on progress rate
+    const remainingTime = (1 - progress) / progressRate;
+    const adjustedRemainingMonths = remainingTime * totalMonths;
+    
+    const estimatedCompletionDate = new Date(currentDate);
+    estimatedCompletionDate.setMonth(estimatedCompletionDate.getMonth() + Math.round(adjustedRemainingMonths));
+    
+    return estimatedCompletionDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short'
+    });
+  };
+  
+  // Add sortedMilestones helper function
+  const sortedMilestones = (roadmap) => {
+    if (!roadmap || !roadmap.milestones || roadmap.milestones.length === 0) {
+      return [];
+    }
+    
+    return [...roadmap.milestones].sort((a, b) => a.order - b.order);
   };
   
   if (loading) {
@@ -679,17 +872,30 @@ const CandidateSearch = () => {
                 </div>
                 
                 <div className="mt-2 flex justify-between text-sm text-gray-500">
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-4">
                     {candidate.roadmap ? (
                       <>
-                        <span className="mr-2">Career Progress:</span>
-                        <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${calculateRoadmapProgress(candidate.roadmap)}%` }}
-                          ></div>
+                        <div className="flex items-center">
+                          <span className="mr-2">Career Progress:</span>
+                          <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${calculateRoadmapProgress(candidate.roadmap).milestoneProgress}%` }}
+                            ></div>
+                          </div>
+                          <span>{calculateRoadmapProgress(candidate.roadmap).milestoneProgress}%</span>
                         </div>
-                        <span>{calculateRoadmapProgress(candidate.roadmap)}%</span>
+                        
+                        <div className="flex items-center">
+                          <span className="mr-2">Skills:</span>
+                          <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${calculateRoadmapProgress(candidate.roadmap).skillProgress}%` }}
+                            ></div>
+                          </div>
+                          <span>{calculateRoadmapProgress(candidate.roadmap).skillProgress}%</span>
+                        </div>
                       </>
                     ) : (
                       <span>No roadmap available</span>
