@@ -3,104 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PivotAI API Test</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .card {
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .success {
-      color: green;
-      font-weight: bold;
-    }
-    .error {
-      color: red;
-      font-weight: bold;
-    }
-    button {
-      padding: 8px 16px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 8px;
-    }
-    pre {
-      background-color: #f5f5f5;
-      padding: 10px;
-      border-radius: 5px;
-      overflow-x: auto;
-    }
-  </style>
-</head>
-<body>
-  <h1>PivotAI API Connection Test</h1>
-  
-  <div class="card">
-    <h3>API URL Configuration</h3>
-    <p>Current API URL: <span id="api-url"></span></p>
-    <button id="check-config">Check Configuration</button>
-    <div id="config-result"></div>
-  </div>
-
-  <div class="card">
-    <h3>Test API Endpoint</h3>
-    <p>Checks if the API is reachable by calling the test endpoint.</p>
-    <button id="test-api">Test API</button>
-    <div id="api-result"></div>
-  </div>
-
-  <div class="card">
-    <h3>Test Authentication</h3>
-    <p>Tests the login endpoint with demo credentials.</p>
-    <div>
-      <input type="text" id="email" placeholder="Email" value="demo@example.com" style="padding: 8px; margin-bottom: 10px; width: 200px;">
-      <input type="password" id="password" placeholder="Password" value="password123" style="padding: 8px; margin-bottom: 10px; width: 200px;">
-    </div>
-    <button id="test-auth">Test Authentication</button>
-    <div id="auth-result"></div>
-  </div>
-
-  <div class="card">
-    <h3>CORS Test</h3>
-    <p>Verifies if CORS is properly configured on the server.</p>
-    <button id="test-cors">Test CORS</button>
-    <div id="cors-result"></div>
-  </div>
-
+  <title>API Test</title>
   <script>
-    // Get the API URL from environment
-    const apiUrl = "https://pivotai-8msu5umkc-kaustubh-kislays-projects.vercel.app/api";
-    document.getElementById("api-url").textContent = apiUrl;
-
-    // Check configuration
-    document.getElementById("check-config").addEventListener("click", () => {
-      const resultElement = document.getElementById("config-result");
-      
-      if (apiUrl && apiUrl.includes("/api")) {
-        resultElement.innerHTML = `<p class="success">✅ API URL is configured correctly.</p>`;
-      } else {
-        resultElement.innerHTML = `<p class="error">❌ API URL may be misconfigured: ${apiUrl}</p>`;
-      }
-    });
-
-    // Test API endpoint
-    document.getElementById("test-api").addEventListener("click", async () => {
-      const resultElement = document.getElementById("api-result");
-      resultElement.innerHTML = "<p>Testing API connection...</p>";
+    async function testAPI() {
+      const result = document.getElementById("result");
+      const url = document.getElementById("apiUrl").value;
       
       try {
-        const response = await fetch(`${apiUrl}/test`, {
+        result.innerHTML = "Testing...";
+        const response = await fetch(url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json"
@@ -108,91 +19,25 @@
         });
         
         const data = await response.json();
-        resultElement.innerHTML = `
-          <p class="success">✅ API connection successful!</p>
-          <p>Status: ${response.status} ${response.statusText}</p>
-          <p>Response:</p>
-          <pre>${JSON.stringify(data, null, 2)}</pre>
-        `;
+        result.innerHTML = `Success: ${JSON.stringify(data)}`;
       } catch (error) {
-        resultElement.innerHTML = `
-          <p class="error">❌ API connection failed!</p>
-          <p>Error: ${error.message}</p>
-          <p>Make sure your server is running and the API URL is correct.</p>
-        `;
+        result.innerHTML = `Error: ${error.message}`;
+        console.error(error);
       }
-    });
-
-    // Test authentication
-    document.getElementById("test-auth").addEventListener("click", async () => {
-      const resultElement = document.getElementById("auth-result");
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      
-      resultElement.innerHTML = "<p>Testing authentication...</p>";
-      
-      try {
-        const response = await fetch(`${apiUrl}/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ email, password })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-          resultElement.innerHTML = `
-            <p class="success">✅ Authentication successful!</p>
-            <p>Status: ${response.status} ${response.statusText}</p>
-            <p>Response:</p>
-            <pre>${JSON.stringify(data, null, 2)}</pre>
-          `;
-        } else {
-          resultElement.innerHTML = `
-            <p class="error">❌ Authentication failed!</p>
-            <p>Status: ${response.status} ${response.statusText}</p>
-            <p>Response:</p>
-            <pre>${JSON.stringify(data, null, 2)}</pre>
-          `;
-        }
-      } catch (error) {
-        resultElement.innerHTML = `
-          <p class="error">❌ Authentication request failed!</p>
-          <p>Error: ${error.message}</p>
-        `;
-      }
-    });
-
-    // Test CORS
-    document.getElementById("test-cors").addEventListener("click", async () => {
-      const resultElement = document.getElementById("cors-result");
-      resultElement.innerHTML = "<p>Testing CORS configuration...</p>";
-      
-      try {
-        const response = await fetch(`${apiUrl}/test`, {
-          method: "OPTIONS",
-          headers: {
-            "Content-Type": "application/json",
-            "Origin": window.location.origin
-          }
-        });
-        
-        resultElement.innerHTML = `
-          <p class="success">✅ CORS is configured correctly!</p>
-          <p>Status: ${response.status} ${response.statusText}</p>
-          <p>Headers:</p>
-          <pre>${JSON.stringify(Object.fromEntries([...response.headers]), null, 2)}</pre>
-        `;
-      } catch (error) {
-        resultElement.innerHTML = `
-          <p class="error">❌ CORS test failed!</p>
-          <p>Error: ${error.message}</p>
-          <p>This might indicate a CORS configuration issue on your server.</p>
-        `;
-      }
-    });
+    }
   </script>
+</head>
+<body>
+  <h1>API Test</h1>
+  <div>
+    <input 
+      type="text" 
+      id="apiUrl" 
+      value="https://pivotai-px23g11gt-kaustubh-kislays-projects.vercel.app/api/test" 
+      style="width: 400px;"
+    >
+    <button onclick="testAPI()">Test API</button>
+  </div>
+  <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
 </body>
 </html>

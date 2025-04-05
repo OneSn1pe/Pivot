@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   define: {
-    "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL || "https://your-backend-api-url.vercel.app/api")
+    "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL || "https://pivotai-px23g11gt-kaustubh-kislays-projects.vercel.app/api")
   },
   build: {
     outDir: "dist",
