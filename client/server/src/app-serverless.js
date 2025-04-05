@@ -14,13 +14,16 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
-// Simplified CORS configuration
+// CORS configuration for Vercel deployment
 app.use(cors({
-  origin: "*",
+  origin: ["https://pivotai-l3r5twu9b-kaustubh-kislays-projects.vercel.app", "http://localhost:5173", "http://localhost:5174"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
+
+// CORS preflight for all routes
+app.options("*", cors());
 
 // Middleware
 app.use(express.json());
