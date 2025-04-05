@@ -226,14 +226,41 @@ const RoadmapView = () => {
           <p className="text-gray-600">{roadmap.description}</p>
         </div>
         
-        {!loadingProgress && progressData && (
-          <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col items-center">
-            <div className="text-3xl font-bold text-blue-600 mb-1">
-              {progressData.completionPercentage}%
+        <div className="flex items-center space-x-3">
+          {!loadingProgress && progressData && (
+            <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col items-center">
+              <div className="text-3xl font-bold text-blue-600 mb-1">
+                {progressData.completionPercentage}%
+              </div>
+              <div className="text-sm text-gray-600">Complete</div>
             </div>
-            <div className="text-sm text-gray-600">Complete</div>
+          )}
+          
+          <button
+            onClick={handleGenerateRoadmap}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Only regenerate if you've made significant changes to your resume or target companies"
+          >
+            Regenerate Roadmap
+          </button>
+        </div>
+      </div>
+      
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+            </svg>
           </div>
-        )}
+          <div className="ml-3">
+            <p className="text-sm text-yellow-700">
+              Roadmaps are now persistent and won't be regenerated automatically when you update your target companies. 
+              Click "Regenerate Roadmap" when you want to create a new roadmap based on your current information.
+            </p>
+          </div>
+        </div>
       </div>
       
       {/* Progress Overview */}

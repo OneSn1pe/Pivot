@@ -59,6 +59,7 @@ function App() {
                       <Route path="dashboard" element={<RecruiterDashboard />} />
                       <Route path="profile" element={<Profile />} />
                       <Route path="candidates" element={<CandidateSearch />} />
+                      <Route path="candidate-preferences" element={<JobPreferences />} />
                       <Route path="job-preferences" element={<JobPreferences />} />
                       <Route path="*" element={<Navigate to="/recruiter/dashboard" replace />} />
                     </Routes>

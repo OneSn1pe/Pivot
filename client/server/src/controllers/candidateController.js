@@ -112,7 +112,7 @@ exports.getResume = async (req, res) => {
 // Update target companies
 exports.updateTargetCompanies = async (req, res) => {
   try {
-    const { targetCompanies } = req.body;
+    const { targetCompanies, regenerateRoadmap = false } = req.body;
     
     console.log('Received target companies:', targetCompanies);
     
@@ -140,9 +140,8 @@ exports.updateTargetCompanies = async (req, res) => {
       targetCompanies: updatedCandidate.targetCompanies
     });
 
-    // If the candidate has updated their target companies and has a resume,
-    // regenerate the roadmap
-    if (candidate.resume) {
+    // Only regenerate the roadmap if explicitly requested
+    if (regenerateRoadmap && candidate.resume) {
       try {
         await roadmapService.regenerateRoadmap(candidate._id);
       } catch (roadmapError) {

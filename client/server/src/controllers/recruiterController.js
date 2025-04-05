@@ -233,59 +233,53 @@ exports.getMatchingCandidates = async (req, res) => {
     // Make sure the Candidate model is properly loaded
     const Candidate = mongoose.model('Candidate');
     
-    // Find candidates who have targeted the recruiter's company
-    // Using a case-insensitive regex for better matching
-    const companyRegex = new RegExp(recruiter.company, 'i');
-    console.log(`Searching for candidates targeting company matching: ${companyRegex}`);
-    
-    try {
-      // First, try to find all candidates regardless of target companies
-      // Useful if the matching is too restrictive
-      const allCandidates = await Candidate.find({})
-        .populate('resume')
-        .populate('roadmap')
-        .select('-password');
-      
-      console.log(`Found ${allCandidates.length} total candidates in the system`);
-      
-      // Then filter for those with matching target companies
-      const matchingCandidates = await Candidate.find({
-        'targetCompanies.company': { $regex: companyRegex }
-      })
+    // First, get all candidates regardless of target companies
+    const allCandidates = await Candidate.find({})
       .populate('resume')
       .populate('roadmap')
       .select('-password');
-      
-      console.log(`Found ${matchingCandidates.length} candidates targeting company: ${recruiter.company}`);
-      
-      // If no exact matches, return all candidates but with a message
-      if (matchingCandidates.length === 0) {
-        console.log('No exact matches, returning all candidates');
-        return res.status(200).json({
-          message: 'No candidates found targeting your company specifically. Showing all candidates.',
-          candidates: allCandidates
-        });
-      }
-      
-      res.status(200).json({
-        message: `Found ${matchingCandidates.length} candidates targeting your company.`,
-        candidates: matchingCandidates
-      });
-      
-    } catch (candidateErr) {
-      console.error('Error finding candidates:', candidateErr);
-      
-      // Try a fallback approach if the original query fails
-      const allCandidates = await Candidate.find({})
-        .select('-password');
-      
-      console.log(`Fallback: Found ${allCandidates.length} total candidates`);
-      
-      res.status(200).json({
-        message: 'Using fallback candidate list due to an error with matching.',
-        candidates: allCandidates
+    
+    console.log(`Found ${allCandidates.length} total candidates in the system`);
+    
+    // If no candidates found at all, return empty array
+    if (allCandidates.length === 0) {
+      return res.status(200).json({
+        message: 'No candidates found in the system.',
+        candidates: []
       });
     }
+    
+    // Create a case-insensitive regex for the company name
+    const companyRegex = new RegExp(recruiter.company, 'i');
+    
+    // Mark candidates that are targeting this recruiter's company
+    const candidatesWithTargetingFlag = allCandidates.map(candidate => {
+      const isTargetingCompany = candidate.targetCompanies && 
+        candidate.targetCompanies.some(tc => 
+          companyRegex.test(tc.company)
+        );
+      
+      // Convert to a plain object so we can add the new property
+      const candidateObj = candidate.toObject();
+      candidateObj.isTargetingCompany = isTargetingCompany;
+      
+      return candidateObj;
+    });
+    
+    // Count how many candidates are targeting this company
+    const targetingCandidatesCount = candidatesWithTargetingFlag.filter(c => c.isTargetingCompany).length;
+    console.log(`${targetingCandidatesCount} candidates are targeting company: ${recruiter.company}`);
+    
+    // Return all candidates, but with targeting information
+    res.status(200).json({
+      message: targetingCandidatesCount > 0 ? 
+        `Found ${targetingCandidatesCount} candidates targeting your company specifically. Showing all ${allCandidates.length} candidates.` : 
+        `No candidates are targeting your company specifically. Showing all ${allCandidates.length} candidates.`,
+      candidates: candidatesWithTargetingFlag,
+      totalCount: allCandidates.length,
+      targetingCount: targetingCandidatesCount
+    });
+    
   } catch (error) {
     console.error('Get matching candidates error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

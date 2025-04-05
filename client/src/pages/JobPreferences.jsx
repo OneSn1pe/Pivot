@@ -6,9 +6,23 @@ import { analyzeJobDescription } from '../services/gpt';
 
 const JobPreferences = () => {
   const { currentUser } = useContext(AuthContext);
-  const { jobPreferences, createJobPreference, loading, error, clearError } = useContext(UserContext);
+  const { 
+    jobPreferences, 
+    createJobPreference, 
+    updateJobPreference,
+    deleteJobPreference,
+    loading, 
+    error, 
+    clearError 
+  } = useContext(UserContext);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingPreferenceId, setEditingPreferenceId] = useState(null);
+  const [selectedPreference, setSelectedPreference] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
   const [formData, setFormData] = useState({
     position: '',
     department: '',
@@ -37,6 +51,58 @@ const JobPreferences = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   
+  // Handle edit preference
+  const handleEditPreference = (preference) => {
+    setFormData({
+      position: preference.position || '',
+      department: preference.department || '',
+      experience: {
+        min: preference.experience?.min || '',
+        max: preference.experience?.max || ''
+      },
+      keySkills: preference.keySkills || [],
+      educationRequirements: preference.educationRequirements || [],
+      certifications: preference.certifications || [],
+      jobDescription: preference.jobDescription || '',
+      responsibilities: preference.responsibilities || [],
+      location: preference.location || '',
+      remote: preference.remote || false,
+      salaryRange: {
+        min: preference.salaryRange?.min || '',
+        max: preference.salaryRange?.max || '',
+        currency: preference.salaryRange?.currency || 'USD'
+      }
+    });
+    setEditingPreferenceId(preference._id);
+    setIsEditMode(true);
+    setIsFormOpen(true);
+  };
+
+  // Handle view details
+  const handleViewDetails = (preference) => {
+    setSelectedPreference(preference);
+    setShowDetailsModal(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = (id) => {
+    setDeleteId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  // Handle actual delete
+  const handleDelete = async () => {
+    try {
+      await deleteJobPreference(deleteId);
+      setSuccessMessage('Candidate preference deleted successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setShowDeleteConfirm(false);
+      setDeleteId(null);
+    } catch (err) {
+      console.error('Failed to delete preference:', err);
+    }
+  };
+  
   // Clear form data
   const clearForm = () => {
     setFormData({
@@ -59,6 +125,8 @@ const JobPreferences = () => {
         currency: 'USD'
       }
     });
+    setIsEditMode(false);
+    setEditingPreferenceId(null);
   };
   
   // Handle form input change
@@ -252,68 +320,93 @@ const JobPreferences = () => {
     }
   };
   
-  // Handle form submission
+  // Update the handleSubmit function to support both create and update
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
-    if (!formData.position.trim()) {
-      return;
-    }
-    
     try {
-      // Create job preference
-      await createJobPreference(formData);
+      // Prepare the data for submission
+      const preferenceData = {
+        ...formData,
+        // Convert string numbers to actual numbers
+        experience: {
+          min: formData.experience.min !== '' ? Number(formData.experience.min) : undefined,
+          max: formData.experience.max !== '' ? Number(formData.experience.max) : undefined
+        },
+        salaryRange: {
+          min: formData.salaryRange.min !== '' ? Number(formData.salaryRange.min) : undefined,
+          max: formData.salaryRange.max !== '' ? Number(formData.salaryRange.max) : undefined,
+          currency: formData.salaryRange.currency
+        }
+      };
       
-      // Show success message
-      setSuccessMessage('Job preference created successfully');
+      if (isEditMode) {
+        await updateJobPreference(editingPreferenceId, preferenceData);
+        setSuccessMessage('Candidate preference updated successfully');
+      } else {
+        await createJobPreference(preferenceData);
+        setSuccessMessage('Candidate preference created successfully');
+      }
       
-      // Clear form and close it
-      clearForm();
+      // Close form and reset state
       setIsFormOpen(false);
+      clearForm();
       
       // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Create job preference error:', err);
+      console.error('Failed to save preference:', err);
     }
   };
   
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Job Preferences</h1>
+      <h1 className="text-2xl font-bold mb-6">Candidate Preferences</h1>
       
-      {/* Success Message */}
+      {/* Show success message if present */}
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded">
           {successMessage}
         </div>
       )}
       
-      {/* Error Message */}
+      {/* Show error if present */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="mb-4 p-3 bg-red-100 text-red-800 rounded">
           {error}
+          <button 
+            onClick={clearError}
+            className="ml-2 text-red-700 hover:text-red-900"
+          >
+            ✕
+          </button>
         </div>
       )}
       
-      {/* Create Job Preference Button */}
-      {!isFormOpen && (
+      {/* Main content */}
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-gray-600">
+          Define the qualities you're looking for in candidates to improve your talent search.
+        </p>
         <button
-          onClick={() => setIsFormOpen(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mb-6"
+          onClick={() => {
+            setIsFormOpen(true);
+            clearForm();
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={loading}
         >
-          Create New Job Preference
+          Add New Preference
         </button>
-      )}
+      </div>
       
-      {/* Create Job Preference Form */}
+      {/* Create/Edit Form */}
       {isFormOpen && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-xl font-semibold">Create Job Preference</h2>
+            <h2 className="text-xl font-semibold">
+              {isEditMode ? 'Edit Candidate Preference' : 'Create Candidate Preference'}
+            </h2>
             <button
               onClick={() => {
                 setIsFormOpen(false);
@@ -867,16 +960,16 @@ const JobPreferences = () => {
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {loading ? 'Creating...' : 'Create Job Preference'}
+                {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Preference' : 'Create Preference')}
               </button>
             </div>
           </form>
         </div>
       )}
       
-      {/* Existing Job Preferences List */}
+      {/* Preferences List */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Your Job Preferences</h2>
+        <h2 className="text-xl font-semibold mb-4">Your Candidate Preferences</h2>
         
         {jobPreferences && jobPreferences.length > 0 ? (
           <div className="space-y-4">
@@ -948,13 +1041,22 @@ const JobPreferences = () => {
                 
                 {/* Actions */}
                 <div className="mt-4 flex justify-end space-x-2">
-                  <button className="text-sm text-blue-600 hover:text-blue-800">
+                  <button 
+                    onClick={() => handleEditPreference(preference)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
                     Edit
                   </button>
-                  <button className="text-sm text-gray-600 hover:text-gray-800">
+                  <button 
+                    onClick={() => handleViewDetails(preference)}
+                    className="text-sm text-gray-600 hover:text-gray-800"
+                  >
                     View Details
                   </button>
-                  <button className="text-sm text-red-600 hover:text-red-800">
+                  <button 
+                    onClick={() => handleDeleteConfirm(preference._id)}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
                     Delete
                   </button>
                 </div>
@@ -963,16 +1065,169 @@ const JobPreferences = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">You haven't created any job preferences yet.</p>
+            <p className="text-gray-500 mb-4">You haven't created any candidate preferences yet.</p>
             <button
               onClick={() => setIsFormOpen(true)}
               className="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
             >
-              Create Your First Job Preference
+              Create Your First Candidate Preference
             </button>
           </div>
         )}
       </div>
+
+      {/* View Details Modal */}
+      {showDetailsModal && selectedPreference && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold">{selectedPreference.position}</h3>
+              <button 
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-gray-700">Basic Information</h4>
+                <div className="mt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Department</p>
+                    <p>{selectedPreference.department || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p>{selectedPreference.location || 'Not specified'} {selectedPreference.remote ? '(Remote)' : ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Experience</p>
+                    <p>
+                      {selectedPreference.experience?.min && selectedPreference.experience?.max
+                        ? `${selectedPreference.experience.min}-${selectedPreference.experience.max} years`
+                        : selectedPreference.experience?.min
+                        ? `${selectedPreference.experience.min}+ years`
+                        : selectedPreference.experience?.max
+                        ? `Up to ${selectedPreference.experience.max} years`
+                        : 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Salary Range</p>
+                    <p>
+                      {selectedPreference.salaryRange?.min && selectedPreference.salaryRange?.max
+                        ? `${selectedPreference.salaryRange.currency} ${selectedPreference.salaryRange.min.toLocaleString()} - ${selectedPreference.salaryRange.max.toLocaleString()}`
+                        : selectedPreference.salaryRange?.min
+                        ? `${selectedPreference.salaryRange.currency} ${selectedPreference.salaryRange.min.toLocaleString()}+`
+                        : selectedPreference.salaryRange?.max
+                        ? `Up to ${selectedPreference.salaryRange.currency} ${selectedPreference.salaryRange.max.toLocaleString()}`
+                        : 'Not specified'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Skills */}
+              {selectedPreference.keySkills && selectedPreference.keySkills.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700">Required Skills</h4>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedPreference.keySkills.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className={`text-sm px-2 py-1 rounded-full ${
+                          skill.required 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {skill.name} 
+                        {skill.level && `(${skill.level})`}
+                        {skill.required && ' *'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Education */}
+              {selectedPreference.educationRequirements && selectedPreference.educationRequirements.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700">Education Requirements</h4>
+                  <div className="mt-2">
+                    {selectedPreference.educationRequirements.map((edu, index) => (
+                      <div key={index} className="mb-2">
+                        <p>
+                          {edu.degree} in {edu.field}
+                          {edu.required && ' (Required)'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Responsibilities */}
+              {selectedPreference.responsibilities && selectedPreference.responsibilities.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700">Responsibilities</h4>
+                  <ul className="mt-2 list-disc list-inside">
+                    {selectedPreference.responsibilities.map((resp, index) => (
+                      <li key={index}>{resp}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Job Description */}
+              {selectedPreference.jobDescription && (
+                <div>
+                  <h4 className="font-medium text-gray-700">Job Description</h4>
+                  <p className="mt-2 whitespace-pre-line">{selectedPreference.jobDescription}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  handleEditPreference(selectedPreference);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
+            <p>Are you sure you want to delete this candidate preference? This action cannot be undone.</p>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -16,6 +16,7 @@ const TargetCompanies = () => {
   });
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [shouldRegenerateRoadmap, setShouldRegenerateRoadmap] = useState(false);
 
   // Initialize companies state with targetCompanies from context
   useEffect(() => {
@@ -93,10 +94,11 @@ const TargetCompanies = () => {
       }
       
       console.log('Saving companies:', companies);
-      const result = await updateTargetCompanies(companies);
+      console.log('Regenerate roadmap?', shouldRegenerateRoadmap);
+      const result = await updateTargetCompanies(companies, shouldRegenerateRoadmap);
       console.log('Save result:', result);
       
-      setSuccessMessage('Target companies updated successfully!');
+      setSuccessMessage(`Target companies updated successfully! ${shouldRegenerateRoadmap ? 'Your roadmap is being regenerated.' : ''}`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       console.error('Failed to save target companies:', err);
@@ -138,7 +140,7 @@ const TargetCompanies = () => {
           </div>
         )}
 
-        <form onSubmit={handleAddCompany} className="mb-6">
+        <form onSubmit={handleAddCompany} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="company" className="block text-gray-700 font-medium mb-2">
@@ -204,17 +206,31 @@ const TargetCompanies = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Your Target Companies</h2>
-          <button
-            onClick={handleSaveChanges}
-            disabled={loading}
-            className={`px-4 py-2 rounded-lg ${
-              loading
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="regenerateRoadmap"
+                checked={shouldRegenerateRoadmap}
+                onChange={(e) => setShouldRegenerateRoadmap(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="regenerateRoadmap" className="ml-2 block text-sm text-gray-700">
+                Regenerate roadmap
+              </label>
+            </div>
+            <button
+              onClick={handleSaveChanges}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg ${
+                loading
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
 
         {companies.length > 0 ? (

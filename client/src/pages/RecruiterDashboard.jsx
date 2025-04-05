@@ -28,7 +28,7 @@ const RecruiterDashboard = () => {
             <p className="text-3xl font-bold">{bookmarkedCandidates?.length || 0}</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-medium text-green-800">Job Preferences</h3>
+            <h3 className="font-medium text-green-800">Candidate Preferences</h3>
             <p className="text-3xl font-bold">{jobPreferences?.length || 0}</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg">
@@ -77,10 +77,10 @@ const RecruiterDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Job Preferences */}
+      {/* Recent Candidate Preferences */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Recent Job Preferences</h2>
+          <h2 className="text-xl font-semibold">Recent Candidate Preferences</h2>
           <Link to="/recruiter/job-preferences" className="text-blue-600 hover:text-blue-800">
             View All
           </Link>
@@ -111,7 +111,7 @@ const RecruiterDashboard = () => {
           </div>
         ) : (
           <p className="text-gray-600">
-            No job preferences created yet. Define your requirements to find matching candidates.
+            No candidate preferences created yet. Define your requirements to find matching candidates.
           </p>
         )}
       </div>

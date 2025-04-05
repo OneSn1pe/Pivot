@@ -22,6 +22,7 @@ const CandidateSearch = () => {
     maxExperience: '',
     keyword: ''
   });
+  const [showTargetingOnly, setShowTargetingOnly] = useState(false);
   
   // Fetch candidates on component mount
   useEffect(() => {
@@ -190,6 +191,11 @@ const CandidateSearch = () => {
       skills: prev.skills.filter(s => s !== skill)
     }));
   };
+  
+  // Apply targeting filter if enabled
+  const displayCandidates = showTargetingOnly 
+    ? filteredCandidates.filter(candidate => candidate.isTargetingCompany)
+    : filteredCandidates;
   
   // Render candidate details modal
   const renderCandidateDetails = () => {
@@ -419,12 +425,6 @@ const CandidateSearch = () => {
     <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Candidate Search</h1>
       
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-      
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -552,31 +552,51 @@ const CandidateSearch = () => {
             ))}
           </div>
         </div>
+        
+        {/* Add this to the filters section */}
+        <div className="mt-4 flex items-center">
+          <input
+            type="checkbox"
+            id="targetingFilter"
+            checked={showTargetingOnly}
+            onChange={(e) => setShowTargetingOnly(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="targetingFilter" className="ml-2 block text-sm text-gray-700">
+            Show only candidates targeting my company
+          </label>
+        </div>
       </div>
       
       {/* Candidates List */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">
-            Candidates ({filteredCandidates.length})
+            Candidates ({displayCandidates.length})
           </h2>
         </div>
         
-        {filteredCandidates.length === 0 ? (
+        {displayCandidates.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">No candidates match your filters</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredCandidates.map(candidate => (
+            {displayCandidates.map(candidate => (
               <div 
                 key={candidate._id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
+                className={`border ${candidate.isTargetingCompany ? 'border-green-300 bg-green-50' : 'border-gray-200'} rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer`}
                 onClick={() => setSelectedCandidate(candidate)}
               >
                 <div className="flex justify-between">
                   <div>
                     <h3 className="font-semibold text-lg">{candidate.name}</h3>
+                    
+                    {candidate.isTargetingCompany && (
+                      <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full inline-block mb-2">
+                        Targeting Your Company
+                      </div>
+                    )}
                     
                     {candidate.skills && candidate.skills.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">

@@ -117,13 +117,14 @@ export const UserProvider = ({ children }) => {
   };
 
   // Update target companies (candidate only)
-  const updateTargetCompanies = async (companies) => {
+  const updateTargetCompanies = async (companies, regenerateRoadmap = false) => {
     if (!currentUser || currentUser.role !== 'candidate') return;
     
     setLoading(true);
     try {
       const response = await api.put('/candidates/target-companies', { 
-        targetCompanies: companies 
+        targetCompanies: companies,
+        regenerateRoadmap
       });
       setTargetCompanies(companies || []);
       return response.data;
@@ -203,6 +204,61 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Update job preference (recruiter only)
+  const updateJobPreference = async (id, preferenceData) => {
+    if (!currentUser || currentUser.role !== 'recruiter') return;
+    
+    setLoading(true);
+    clearError();
+    
+    try {
+      console.log('Updating job preference:', id, preferenceData);
+      const response = await api.put(`/recruiters/job-preferences/${id}`, preferenceData);
+      console.log('Job preference updated:', response.data);
+      
+      // Update the local state
+      setJobPreferences(prevPreferences => 
+        prevPreferences.map(pref => 
+          pref._id === id ? response.data : pref
+        )
+      );
+      
+      return response.data;
+    } catch (err) {
+      console.error('Update job preference error:', err);
+      setError(err.response?.data?.message || 'Failed to update job preference');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete job preference (recruiter only)
+  const deleteJobPreference = async (id) => {
+    if (!currentUser || currentUser.role !== 'recruiter') return;
+    
+    setLoading(true);
+    clearError();
+    
+    try {
+      console.log('Deleting job preference:', id);
+      await api.delete(`/recruiters/job-preferences/${id}`);
+      
+      // Update the local state
+      setJobPreferences(prevPreferences => 
+        prevPreferences.filter(pref => pref._id !== id)
+      );
+      
+      return true;
+    } catch (err) {
+      console.error('Delete job preference error:', err);
+      setError(err.response?.data?.message || 'Failed to delete job preference');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Bookmark candidate (recruiter only)
   const bookmarkCandidate = async (candidateId, notes) => {
     if (!currentUser || currentUser.role !== 'recruiter') return;
@@ -263,6 +319,8 @@ export const UserProvider = ({ children }) => {
     generateRoadmap,
     updateMilestoneStatus,
     createJobPreference,
+    updateJobPreference,
+    deleteJobPreference,
     bookmarkCandidate,
     removeBookmark,
     clearError,
