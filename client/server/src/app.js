@@ -2,12 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-
-// Import routes
-const authRoutes = require('./routes/authRoute');
-const candidateRoutes = require('./routes/candidates');
-const recruiterRoutes = require('./routes/recruiters');
-const roadmapRoutes = require('./routes/roadmaps');
+const path = require('path');
+const fs = require('fs');
 
 // Import middleware
 const errorMiddleware = require('./middleware/error');
@@ -31,6 +27,47 @@ mongoose
     console.error('For local development, you can use: mongodb://localhost:27017/pivotai');
   });
 
+// Explicitly register all models in the correct order to avoid circular dependencies
+const modelsDir = path.join(__dirname, 'models');
+const modelFiles = fs.readdirSync(modelsDir);
+
+// First, require base models
+console.log('Registering base models...');
+// User should be loaded first as it's the parent model
+if (modelFiles.includes('User.js')) {
+  require('./models/User');
+  console.log('- Registered User model');
+}
+
+// Then load the rest of the models in a specific order
+const modelOrder = [
+  'Candidate.js',
+  'Recruiter.js',
+  'Resume.js',
+  'Roadmap.js', 
+  'JobPreference.js'
+];
+
+// Register models in the specified order
+console.log('Registering models in order...');
+modelOrder.forEach(modelFile => {
+  if (modelFiles.includes(modelFile)) {
+    require(`./models/${modelFile}`);
+    console.log(`- Registered ${modelFile} model`);
+  }
+});
+
+// Register any remaining models
+console.log('Registering remaining models...');
+modelFiles.forEach(file => {
+  if (file.endsWith('.js') && 
+      file !== 'User.js' && 
+      !modelOrder.includes(file)) {
+    require(path.join(modelsDir, file));
+    console.log(`- Registered ${file} model`);
+  }
+});
+
 // Simplified CORS for testing
 app.use(cors({
   origin: '*',  // Allow all origins for testing
@@ -42,6 +79,12 @@ app.use(cors({
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Import routes after models are registered
+const authRoutes = require('./routes/authRoute');
+const candidateRoutes = require('./routes/candidates');
+const recruiterRoutes = require('./routes/recruiters');
+const roadmapRoutes = require('./routes/roadmaps');
 
 // Routes
 app.use('/api/auth', authRoutes);

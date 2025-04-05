@@ -61,6 +61,12 @@ const candidateSchema = new mongoose.Schema({
   }],
 });
 
+// Ensure this model is registered with mongoose
 const Candidate = User.discriminator('candidate', candidateSchema);
+
+// This additional export helps ensure model reference availability
+if (!mongoose.models.Candidate) {
+  mongoose.model('Candidate', candidateSchema);
+}
 
 module.exports = Candidate;

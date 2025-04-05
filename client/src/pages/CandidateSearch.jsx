@@ -35,7 +35,19 @@ const CandidateSearch = () => {
     
     try {
       const response = await api.get('/recruiters/candidates');
-      setCandidates(response.data);
+      console.log('Candidate API response:', response.data);
+      
+      // Check if the response has the new format with a candidates array
+      if (response.data && response.data.candidates) {
+        setCandidates(response.data.candidates);
+        // Show the message from the API if provided
+        if (response.data.message) {
+          console.log('API Message:', response.data.message);
+        }
+      } else {
+        // Handle the old format for backward compatibility
+        setCandidates(response.data);
+      }
     } catch (err) {
       console.error('Error fetching candidates:', err);
       setError('Failed to fetch candidates. Please try again.');

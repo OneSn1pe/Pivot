@@ -53,7 +53,7 @@ const roadmapSchema = new mongoose.Schema({
       amount: Number,
       unit: {
         type: String,
-        enum: ['days', 'weeks', 'months'],
+        enum: ['days', 'weeks', 'months', 'month', 'day', 'week', 'years', 'year'],
       },
     },
     resources: [{
@@ -61,7 +61,7 @@ const roadmapSchema = new mongoose.Schema({
       url: String,
       type: {
         type: String,
-        enum: ['article', 'video', 'course', 'book', 'documentation', 'tool', 'other'],
+        enum: ['article', 'video', 'course', 'book', 'documentation', 'tool', 'other', 'certification', 'event', 'website', 'community', 'conference', 'podcast'],
       },
     }],
     completed: {
@@ -73,10 +73,10 @@ const roadmapSchema = new mongoose.Schema({
       type: Number,
       required: true,
     },
-    dependencies: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Milestone',
-    }],
+    dependencies: {
+      type: Array,
+      default: []
+    },
   }],
   alternativeRoutes: [{
     title: {

@@ -2,6 +2,7 @@ const Recruiter = require('../models/Recruiter');
 const Candidate = require('../models/Candidate');
 const JobPreference = require('../models/JobPreference');
 const gptService = require('../services/gptService');
+const mongoose = require('mongoose');
 
 // Get recruiter profile
 exports.getProfile = async (req, res) => {
@@ -219,21 +220,72 @@ exports.deleteJobPreference = async (req, res) => {
 // Get matching candidates
 exports.getMatchingCandidates = async (req, res) => {
   try {
+    console.log('Looking for matching candidates...');
+    
     // Get recruiter's company
     const recruiter = await Recruiter.findById(req.user.id);
     if (!recruiter) {
       return res.status(404).json({ message: 'Recruiter not found' });
     }
-
+    
+    console.log(`Found recruiter from company: ${recruiter.company}`);
+    
+    // Make sure the Candidate model is properly loaded
+    const Candidate = mongoose.model('Candidate');
+    
     // Find candidates who have targeted the recruiter's company
-    const candidates = await Candidate.find({
-      'targetCompanies.company': { $regex: new RegExp(recruiter.company, 'i') }
-    })
-    .populate('resume')
-    .populate('roadmap')
-    .select('-password');
-
-    res.status(200).json(candidates);
+    // Using a case-insensitive regex for better matching
+    const companyRegex = new RegExp(recruiter.company, 'i');
+    console.log(`Searching for candidates targeting company matching: ${companyRegex}`);
+    
+    try {
+      // First, try to find all candidates regardless of target companies
+      // Useful if the matching is too restrictive
+      const allCandidates = await Candidate.find({})
+        .populate('resume')
+        .populate('roadmap')
+        .select('-password');
+      
+      console.log(`Found ${allCandidates.length} total candidates in the system`);
+      
+      // Then filter for those with matching target companies
+      const matchingCandidates = await Candidate.find({
+        'targetCompanies.company': { $regex: companyRegex }
+      })
+      .populate('resume')
+      .populate('roadmap')
+      .select('-password');
+      
+      console.log(`Found ${matchingCandidates.length} candidates targeting company: ${recruiter.company}`);
+      
+      // If no exact matches, return all candidates but with a message
+      if (matchingCandidates.length === 0) {
+        console.log('No exact matches, returning all candidates');
+        return res.status(200).json({
+          message: 'No candidates found targeting your company specifically. Showing all candidates.',
+          candidates: allCandidates
+        });
+      }
+      
+      res.status(200).json({
+        message: `Found ${matchingCandidates.length} candidates targeting your company.`,
+        candidates: matchingCandidates
+      });
+      
+    } catch (candidateErr) {
+      console.error('Error finding candidates:', candidateErr);
+      
+      // Try a fallback approach if the original query fails
+      const allCandidates = await Candidate.find({})
+        .select('-password');
+      
+      console.log(`Fallback: Found ${allCandidates.length} total candidates`);
+      
+      res.status(200).json({
+        message: 'Using fallback candidate list due to an error with matching.',
+        candidates: allCandidates
+      });
+    }
   } catch (error) {
     console.error('Get matching candidates error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -244,23 +296,41 @@ exports.getMatchingCandidates = async (req, res) => {
 exports.bookmarkCandidate = async (req, res) => {
   try {
     const { candidateId, notes } = req.body;
+    console.log(`Attempting to bookmark candidate ${candidateId} with notes: ${notes}`);
+
+    // Ensure models are properly loaded
+    const Candidate = mongoose.model('Candidate');
+    const Recruiter = mongoose.model('Recruiter');
 
     // Check if candidate exists
     const candidate = await Candidate.findById(candidateId);
     if (!candidate) {
+      console.log(`Candidate with ID ${candidateId} not found`);
       return res.status(404).json({ message: 'Candidate not found' });
     }
+    
+    console.log(`Found candidate: ${candidate.name}`);
 
     // Check if already bookmarked
     const recruiter = await Recruiter.findById(req.user.id);
+    if (!recruiter) {
+      console.log(`Recruiter with ID ${req.user.id} not found`);
+      return res.status(404).json({ message: 'Recruiter not found' });
+    }
+    
+    console.log(`Found recruiter: ${recruiter.name}`);
+    
     const alreadyBookmarked = recruiter.bookmarkedCandidates.some(
-      bookmark => bookmark.candidate.toString() === candidateId
+      bookmark => bookmark.candidate && bookmark.candidate.toString() === candidateId
     );
 
     if (alreadyBookmarked) {
+      console.log(`Candidate ${candidateId} is already bookmarked by recruiter ${req.user.id}`);
       return res.status(400).json({ message: 'Candidate already bookmarked' });
     }
 
+    console.log(`Adding bookmark for candidate ${candidateId} to recruiter ${req.user.id}`);
+    
     // Add bookmark
     await Recruiter.findByIdAndUpdate(
       req.user.id,
@@ -275,11 +345,15 @@ exports.bookmarkCandidate = async (req, res) => {
       }
     );
 
+    console.log(`Successfully added bookmark to recruiter. Now updating candidate's bookmarkedBy list.`);
+    
     // Add recruiter to candidate's bookmarkedBy list
     await Candidate.findByIdAndUpdate(
       candidateId,
       { $push: { bookmarkedBy: req.user.id } }
     );
+    
+    console.log(`Successfully updated candidate's bookmarkedBy list.`);
 
     res.status(200).json({ message: 'Candidate bookmarked successfully' });
   } catch (error) {

@@ -5,6 +5,142 @@ const JobPreference = require('../models/JobPreference');
 const gptService = require('./gptService');
 
 /**
+ * Validate and transform roadmap data from GPT to match Mongoose schema
+ * @param {Object} roadmapData - Data from GPT
+ * @returns {Object} - Transformed data
+ */
+const validateAndTransformRoadmapData = (roadmapData) => {
+  try {
+    console.log('Validating and transforming roadmap data...');
+    
+    // Create a copy of the data to avoid modifying the original
+    const transformedData = JSON.parse(JSON.stringify(roadmapData));
+    
+    // Normalize title and description
+    transformedData.title = transformedData.title || 'Career Roadmap';
+    transformedData.description = transformedData.description || 'A personalized career roadmap';
+    
+    // Ensure numeric fields are numbers
+    transformedData.estimatedTimelineMonths = parseInt(transformedData.estimatedTimelineMonths) || 6;
+    transformedData.difficultyScore = parseInt(transformedData.difficultyScore) || 5;
+    
+    // Process milestones
+    if (Array.isArray(transformedData.milestones)) {
+      transformedData.milestones = transformedData.milestones.map((milestone, index) => {
+        // Normalize milestone fields
+        const transformedMilestone = {
+          title: milestone.title || `Milestone ${index + 1}`,
+          description: milestone.description || '',
+          // Ensure type is in allowed values
+          type: (milestone.type && ['project', 'certification', 'course', 'skill', 'job', 'internship', 'networking', 'education', 'other'].includes(milestone.type.toLowerCase()))
+            ? milestone.type.toLowerCase()
+            : 'other',
+          // Ensure difficulty is in allowed values
+          difficulty: (milestone.difficulty && ['beginner', 'intermediate', 'advanced', 'expert'].includes(milestone.difficulty.toLowerCase()))
+            ? milestone.difficulty.toLowerCase()
+            : 'intermediate',
+          order: milestone.order || index,
+          completed: false
+        };
+        
+        // Process timeEstimate
+        if (milestone.timeEstimate) {
+          transformedMilestone.timeEstimate = {
+            amount: parseInt(milestone.timeEstimate.amount) || 1,
+            unit: milestone.timeEstimate.unit || 'weeks'
+          };
+          
+          // Normalize timeEstimate unit to plural form
+          if (transformedMilestone.timeEstimate.unit === 'month') {
+            transformedMilestone.timeEstimate.unit = 'months';
+          } else if (transformedMilestone.timeEstimate.unit === 'day') {
+            transformedMilestone.timeEstimate.unit = 'days';
+          } else if (transformedMilestone.timeEstimate.unit === 'week') {
+            transformedMilestone.timeEstimate.unit = 'weeks';
+          } else if (transformedMilestone.timeEstimate.unit === 'year') {
+            transformedMilestone.timeEstimate.unit = 'months';
+            transformedMilestone.timeEstimate.amount *= 12; // Convert years to months
+          }
+        } else {
+          transformedMilestone.timeEstimate = { amount: 2, unit: 'weeks' };
+        }
+        
+        // Process resources
+        if (Array.isArray(milestone.resources)) {
+          transformedMilestone.resources = milestone.resources.map(resource => {
+            const validTypes = ['article', 'video', 'course', 'book', 'documentation', 'tool', 'other', 'certification', 'event', 'website', 'community', 'conference', 'podcast'];
+            
+            // Map similar types to their valid counterparts
+            let normalizedType = resource.type ? resource.type.toLowerCase() : 'other';
+            if (!validTypes.includes(normalizedType)) {
+              // Map similar types to allowed values
+              if (normalizedType.includes('cert')) normalizedType = 'other';
+              else if (normalizedType.includes('event')) normalizedType = 'other';
+              else normalizedType = 'other';
+            }
+            
+            return {
+              title: resource.title || 'Resource',
+              url: resource.url || '#',
+              type: normalizedType
+            };
+          });
+        } else {
+          transformedMilestone.resources = [];
+        }
+        
+        // Process dependencies
+        transformedMilestone.dependencies = Array.isArray(milestone.dependencies) ? milestone.dependencies : [];
+        
+        return transformedMilestone;
+      });
+    } else {
+      transformedData.milestones = [];
+    }
+    
+    // Process alternativeRoutes
+    if (Array.isArray(transformedData.alternativeRoutes)) {
+      transformedData.alternativeRoutes = transformedData.alternativeRoutes.map((route, index) => ({
+        title: route.title || `Alternative Route ${index + 1}`,
+        description: route.description || '',
+        milestones: Array.isArray(route.milestones) ? route.milestones.map((m, i) => ({
+          title: m.title || `Alternative Milestone ${i + 1}`,
+          description: m.description || '',
+          type: (m.type && ['project', 'certification', 'course', 'skill', 'job', 'internship', 'networking', 'education', 'other'].includes(m.type.toLowerCase()))
+            ? m.type.toLowerCase()
+            : 'other'
+        })) : []
+      }));
+    } else {
+      transformedData.alternativeRoutes = [];
+    }
+    
+    // Process gptAnalysis
+    if (transformedData.gptAnalysis) {
+      transformedData.gptAnalysis = {
+        reasoning: transformedData.gptAnalysis.reasoning || '',
+        keyInsights: Array.isArray(transformedData.gptAnalysis.keyInsights) ? transformedData.gptAnalysis.keyInsights : [],
+        marketTrends: Array.isArray(transformedData.gptAnalysis.marketTrends) ? transformedData.gptAnalysis.marketTrends : [],
+        companyCulture: Array.isArray(transformedData.gptAnalysis.companyCulture) ? transformedData.gptAnalysis.companyCulture : []
+      };
+    } else {
+      transformedData.gptAnalysis = {
+        reasoning: '',
+        keyInsights: [],
+        marketTrends: [],
+        companyCulture: []
+      };
+    }
+    
+    console.log('Roadmap data successfully transformed');
+    return transformedData;
+  } catch (error) {
+    console.error('Error transforming roadmap data:', error);
+    throw new Error(`Failed to transform roadmap data: ${error.message}`);
+  }
+};
+
+/**
  * Generate a roadmap for a candidate
  * @param {String} candidateId - ID of the candidate
  * @returns {Object} - Generated roadmap
@@ -43,13 +179,16 @@ const generateRoadmap = async (candidateId) => {
     }
 
     // Generate roadmap using GPT
-    const roadmapData = await gptService.generateRoadmap(
+    const rawRoadmapData = await gptService.generateRoadmap(
       resume.analysis || {},
       targetCompanies,
       jobPreferences
     );
+    
+    // Validate and transform roadmap data
+    const roadmapData = validateAndTransformRoadmapData(rawRoadmapData);
 
-    // Create new roadmap
+    // Create new roadmap with empty dependencies arrays to prevent casting errors
     const roadmap = new Roadmap({
       candidate: candidateId,
       targetCompanies: targetCompanies.map(tc => ({
@@ -68,10 +207,10 @@ const generateRoadmap = async (candidateId) => {
         timeEstimate: milestone.timeEstimate,
         resources: milestone.resources,
         order: milestone.order,
-        dependencies: [] // Will be populated later after all milestones are created
+        dependencies: [] // Always use empty array to avoid ObjectId casting issues
       })),
-      alternativeRoutes: roadmapData.alternativeRoutes || [],
-      gptAnalysis: roadmapData.gptAnalysis || {}
+      alternativeRoutes: roadmapData.alternativeRoutes,
+      gptAnalysis: roadmapData.gptAnalysis
     });
 
     // Save the roadmap
@@ -182,5 +321,6 @@ module.exports = {
   getRoadmapById,
   getRoadmapByCandidate,
   updateMilestoneStatus,
-  regenerateRoadmap
+  regenerateRoadmap,
+  validateAndTransformRoadmapData
 };

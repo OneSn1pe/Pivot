@@ -63,6 +63,12 @@ const recruiterSchema = new mongoose.Schema({
   },
 });
 
+// Ensure this model is registered with mongoose
 const Recruiter = User.discriminator('recruiter', recruiterSchema);
+
+// This additional export helps ensure model reference availability
+if (!mongoose.models.Recruiter) {
+  mongoose.model('Recruiter', recruiterSchema);
+}
 
 module.exports = Recruiter;

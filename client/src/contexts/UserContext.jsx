@@ -180,9 +180,19 @@ export const UserProvider = ({ children }) => {
     if (!currentUser || currentUser.role !== 'recruiter') return;
     
     setLoading(true);
+    clearError();
+    
     try {
+      console.log('Creating job preference:', preferenceData);
       const response = await api.post('/recruiters/job-preferences', preferenceData);
-      setJobPreferences([...jobPreferences, response.data]);
+      console.log('Job preference created:', response.data);
+      
+      // Update the local state
+      setJobPreferences(prevPreferences => [...prevPreferences, response.data]);
+      
+      // Also refresh the entire profile to ensure all related data is updated
+      await fetchUserProfile();
+      
       return response.data;
     } catch (err) {
       console.error('Create job preference error:', err);

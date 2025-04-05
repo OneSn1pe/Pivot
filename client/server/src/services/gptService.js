@@ -24,6 +24,136 @@ try {
   console.error('Failed to initialize OpenAI client:', error);
 }
 
+// Helper function to check if OpenAI is properly configured
+const isOpenAIConfigured = () => {
+  if (!API_KEY || API_KEY.trim() === '' || API_KEY.includes('xxxxxxxx')) {
+    console.error('OpenAI API key is missing, empty, or using placeholder value');
+    return false;
+  }
+  if (!openai) {
+    console.error('OpenAI client not initialized');
+    return false;
+  }
+  return true;
+};
+
+// Fallback roadmap generator for when OpenAI is unavailable
+const generateFallbackRoadmap = (targetCompanies) => {
+  console.log('Using fallback roadmap generator');
+  
+  // Extract target position from first company or default to 'Software Engineer'
+  const targetPosition = targetCompanies && targetCompanies.length > 0 ? 
+    targetCompanies[0].position : 'Software Engineer';
+  
+  return {
+    title: `Career Roadmap for ${targetPosition}`,
+    description: "This is a basic roadmap generated as a fallback when OpenAI API is unavailable.",
+    estimatedTimelineMonths: 6,
+    difficultyScore: 7,
+    milestones: [
+      {
+        title: "Master Core Programming Skills",
+        description: "Focus on strengthening your programming fundamentals with data structures and algorithms.",
+        type: "skill",
+        difficulty: "intermediate",
+        timeEstimate: {
+          amount: 4,
+          unit: "weeks"
+        },
+        resources: [
+          {
+            title: "LeetCode",
+            url: "https://leetcode.com",
+            type: "tool"
+          },
+          {
+            title: "Data Structures and Algorithms Course",
+            url: "https://www.coursera.org/specializations/data-structures-algorithms",
+            type: "course"
+          }
+        ],
+        order: 1,
+        dependencies: []
+      },
+      {
+        title: "Build a Portfolio Project",
+        description: "Create a substantial project that demonstrates your skills relevant to your target role.",
+        type: "project",
+        difficulty: "intermediate",
+        timeEstimate: {
+          amount: 2,
+          unit: "months"
+        },
+        resources: [
+          {
+            title: "GitHub",
+            url: "https://github.com",
+            type: "tool"
+          }
+        ],
+        order: 2,
+        dependencies: [0]
+      },
+      {
+        title: "Resume and LinkedIn Optimization",
+        description: "Update your resume and LinkedIn profile to highlight relevant skills and experiences.",
+        type: "other",
+        difficulty: "beginner",
+        timeEstimate: {
+          amount: 1,
+          unit: "weeks"
+        },
+        resources: [
+          {
+            title: "LinkedIn Profile Tips",
+            url: "https://www.linkedin.com/business/talent/blog/product-tips/linkedin-profile-tips",
+            type: "article"
+          }
+        ],
+        order: 3,
+        dependencies: []
+      },
+      {
+        title: "Interview Preparation",
+        description: "Practice technical interviews and prepare for behavioral questions.",
+        type: "skill",
+        difficulty: "advanced",
+        timeEstimate: {
+          amount: 3,
+          unit: "weeks"
+        },
+        resources: [
+          {
+            title: "Pramp",
+            url: "https://www.pramp.com",
+            type: "tool"
+          },
+          {
+            title: "Cracking the Coding Interview",
+            url: "https://www.amazon.com/Cracking-Coding-Interview-Programming-Questions/dp/0984782850",
+            type: "book"
+          }
+        ],
+        order: 4,
+        dependencies: [0, 1]
+      }
+    ],
+    alternativeRoutes: [
+      {
+        title: "Bootcamp Route",
+        description: "If you prefer structured learning, consider a coding bootcamp.",
+        milestones: []
+      }
+    ],
+    gptAnalysis: {
+      reasoning: "This is a fallback roadmap generated when the OpenAI API is unavailable.",
+      keyInsights: ["Focus on core skills", "Build relevant projects", "Prepare for interviews"],
+      marketTrends: ["Technical interviews are standard", "Portfolio projects are important"],
+      companyCulture: []
+    }
+  };
+};
+
 /**
  * Analyze a resume using GPT-4o
  * @param {Object} resumeData - Parsed resume data
@@ -31,9 +161,9 @@ try {
  */
 const analyzeResume = async (resumeData) => {
   try {
-    // Validate OpenAI client
-    if (!openai) {
-      throw new Error('OpenAI client not initialized');
+    // Check if OpenAI is properly configured
+    if (!isOpenAIConfigured()) {
+      throw new Error('OpenAI API is not properly configured');
     }
 
     // Validate resumeData
@@ -120,6 +250,12 @@ const analyzeResume = async (resumeData) => {
  */
 const generateRoadmap = async (resumeAnalysis, targetCompanies, jobPreferences = []) => {
   try {
+    // Check if OpenAI is properly configured
+    if (!isOpenAIConfigured()) {
+      console.warn('OpenAI API not configured, using fallback roadmap generator');
+      return generateFallbackRoadmap(targetCompanies);
+    }
+
     const prompt = `
     You are an expert career coach for software engineers and computer science professionals.
     Create a detailed career roadmap for a candidate based on their resume analysis and target companies.
@@ -193,6 +329,8 @@ const generateRoadmap = async (resumeAnalysis, targetCompanies, jobPreferences =
     }
     `;
 
+    console.log('Sending roadmap generation request to OpenAI...');
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -202,9 +340,25 @@ const generateRoadmap = async (resumeAnalysis, targetCompanies, jobPreferences =
       response_format: { type: "json_object" }
     });
 
+    console.log('Received roadmap response from OpenAI');
+    
     return JSON.parse(response.choices[0].message.content);
   } catch (error) {
     console.error('GPT Roadmap Generation error:', error);
+    
+    // Check if this is an API key issue
+    if (error.response && error.response.status === 401) {
+      console.error('Authentication error: Invalid API key. Please check your OpenAI API key in .env file.');
+    }
+    
+    // Return fallback roadmap instead of throwing for certain errors
+    if (error.message.includes('API key') || 
+        error.message.includes('not configured') || 
+        (error.response && error.response.status === 401)) {
+      console.log('Using fallback roadmap due to API key issue');
+      return generateFallbackRoadmap(targetCompanies);
+    }
+    
     throw new Error('Failed to generate roadmap with GPT');
   }
 };
