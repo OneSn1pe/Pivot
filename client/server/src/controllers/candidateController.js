@@ -77,12 +77,17 @@ exports.uploadResume = async (req, res) => {
       await Candidate.findByIdAndUpdate(candidateId, { resume: resume._id });
     }
 
-    // Analyze the resume with GPT
-    const analysis = await gptService.analyzeResume(resume.parsedData);
-    
-    // Update resume with analysis
-    resume.analysis = analysis;
-    await resume.save();
+    // Try to analyze the resume with GPT, but don't fail if it doesn't work
+    try {
+      const analysis = await gptService.analyzeResume(resume.parsedData);
+      
+      // Update resume with analysis
+      resume.analysis = analysis;
+      await resume.save();
+    } catch (analysisError) {
+      console.error('Resume analysis error:', analysisError);
+      // Continue without analysis - we'll still return the resume
+    }
 
     res.status(200).json(resume);
   } catch (error) {
@@ -109,6 +114,8 @@ exports.updateTargetCompanies = async (req, res) => {
   try {
     const { targetCompanies } = req.body;
     
+    console.log('Received target companies:', targetCompanies);
+    
     if (!targetCompanies || !Array.isArray(targetCompanies)) {
       return res.status(400).json({ message: 'Target companies must be an array' });
     }
@@ -118,9 +125,20 @@ exports.updateTargetCompanies = async (req, res) => {
       return res.status(404).json({ message: 'Candidate not found' });
     }
 
+    console.log('Candidate before update:', {
+      id: candidate._id,
+      targetCompanies: candidate.targetCompanies
+    });
+
     // Update target companies
     candidate.targetCompanies = targetCompanies;
     await candidate.save();
+    
+    const updatedCandidate = await Candidate.findById(req.user.id);
+    console.log('Candidate after update:', {
+      id: updatedCandidate._id,
+      targetCompanies: updatedCandidate.targetCompanies
+    });
 
     // If the candidate has updated their target companies and has a resume,
     // regenerate the roadmap

@@ -14,11 +14,17 @@ const generateToken = (userId) => {
 exports.register = async (req, res) => {
   try {
     const { email, password, name, role, company, position } = req.body;
+    
+    console.log(`Registration attempt: ${email} as ${role}`);
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      console.log(`Registration failed: Email ${email} already exists as ${existingUser.role}`);
+      return res.status(400).json({ 
+        message: 'User already exists', 
+        details: `This email is already registered as a ${existingUser.role}`
+      });
     }
 
     let user;
@@ -31,9 +37,11 @@ exports.register = async (req, res) => {
         name,
         role,
       });
+      console.log(`Created candidate: ${email}`);
     } else if (role === 'recruiter') {
       // Validate recruiter-specific fields
       if (!company || !position) {
+        console.log('Registration failed: Missing company or position for recruiter');
         return res.status(400).json({ message: 'Company and position are required for recruiters' });
       }
 
@@ -45,7 +53,9 @@ exports.register = async (req, res) => {
         company,
         position,
       });
+      console.log(`Created recruiter: ${email}, Company: ${company}`);
     } else {
+      console.log(`Registration failed: Invalid role ${role}`);
       return res.status(400).json({ message: 'Invalid role' });
     }
 
@@ -62,7 +72,11 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

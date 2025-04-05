@@ -103,6 +103,7 @@ export const UserProvider = ({ children }) => {
     
     setLoading(true);
     try {
+      // Our api.js now handles FormData content-type automatically
       const response = await api.post('/candidates/resume', formData);
       setResume(response.data);
       return response.data;
@@ -124,7 +125,7 @@ export const UserProvider = ({ children }) => {
       const response = await api.put('/candidates/target-companies', { 
         targetCompanies: companies 
       });
-      setTargetCompanies(response.data.targetCompanies || []);
+      setTargetCompanies(companies || []);
       return response.data;
     } catch (err) {
       console.error('Update target companies error:', err);

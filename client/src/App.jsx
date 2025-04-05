@@ -14,6 +14,7 @@ import RoadmapView from './pages/RoadmapView';
 import CandidateSearch from './pages/CandidateSearch';
 import ResumeUpload from './pages/ResumeUpload';
 import JobPreferences from './pages/JobPreferences';
+import TargetCompanies from './pages/TargetCompanies';
 import NotFound from './pages/NotFound';
 
 // Components
@@ -45,6 +46,7 @@ function App() {
                       <Route path="profile" element={<Profile />} />
                       <Route path="roadmap" element={<RoadmapView />} />
                       <Route path="resume" element={<ResumeUpload />} />
+                      <Route path="target-companies" element={<TargetCompanies />} />
                       <Route path="*" element={<Navigate to="/candidate/dashboard" replace />} />
                     </Routes>
                   </PrivateRoute>

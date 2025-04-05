@@ -91,7 +91,12 @@ const ResumeUpload = () => {
     try {
       // Create form data
       const formData = new FormData();
+      
+      // Make sure the field name matches what the server expects (resume)
+      // The file's name and content type are automatically set
       formData.append('resume', file);
+      
+      console.log("Uploading file:", file.name, file.type, file.size);
       
       // Upload resume
       await uploadResume(formData);

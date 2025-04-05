@@ -41,6 +41,9 @@ const Navbar = () => {
                     <Link to="/candidate/resume" className="text-gray-700 hover:text-blue-600">
                       Resume
                     </Link>
+                    <Link to="/candidate/target-companies" className="text-gray-700 hover:text-blue-600">
+                      Target Companies
+                    </Link>
                   </>
                 )}
 
@@ -160,6 +163,13 @@ const Navbar = () => {
                     onClick={toggleMenu}
                   >
                     Resume
+                  </Link>
+                  <Link
+                    to="/candidate/target-companies"
+                    className="block py-2 text-gray-700 hover:text-blue-600"
+                    onClick={toggleMenu}
+                  >
+                    Target Companies
                   </Link>
                 </>
               )}

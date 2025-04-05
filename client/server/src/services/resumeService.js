@@ -150,15 +150,38 @@ const parseResume = async (fileInfo) => {
     const filePath = fileInfo.path;
     const fileExtension = path.extname(fileInfo.originalname).toLowerCase();
 
+    console.log(`Parsing resume file: ${fileInfo.originalname}, type: ${fileExtension}`);
+
     let text = '';
     // Handle different file types
     if (fileExtension === '.pdf') {
-      const dataBuffer = fs.readFileSync(filePath);
-      const pdfData = await PDFParser(dataBuffer);
-      text = pdfData.text;
+      console.log('Processing PDF file...');
+      try {
+        if (!fs.existsSync(filePath)) {
+          console.error(`PDF file not found at path: ${filePath}`);
+          throw new Error('PDF file not found');
+        }
+
+        const dataBuffer = fs.readFileSync(filePath);
+        console.log(`Read ${dataBuffer.length} bytes from PDF file`);
+        
+        const pdfData = await PDFParser(dataBuffer);
+        text = pdfData.text;
+        
+        console.log(`Extracted ${text.length} characters from PDF`);
+        
+        // If text is too short, it might indicate parsing issues
+        if (text.length < 100) {
+          console.warn('Very little text extracted from PDF, possibly corrupted or empty file');
+        }
+      } catch (pdfError) {
+        console.error('PDF parsing error:', pdfError);
+        throw new Error(`Failed to parse PDF: ${pdfError.message}`);
+      }
     } else if (fileExtension === '.docx') {
       // Implement DOCX parsing if needed
       // For now, return a simpler structure
+      console.log('DOCX parsing not yet fully implemented');
       return {
         skills: [],
         experience: [],
@@ -168,19 +191,27 @@ const parseResume = async (fileInfo) => {
       };
     } else {
       // Unsupported file type
-      throw new Error('Unsupported file type');
+      console.error(`Unsupported file type: ${fileExtension}`);
+      throw new Error(`Unsupported file type: ${fileExtension}`);
     }
 
+    console.log('Extracting resume sections...');
+    
     // Simple parsing logic
     // This is a basic implementation - you can make this more sophisticated
     // or use a dedicated resume parsing library
-    return {
+    const parsedData = {
       skills: extractSkills(text),
       experience: extractExperience(text),
       education: extractEducation(text),
       projects: extractProjects(text),
       certifications: extractCertifications(text),
     };
+    
+    console.log('Resume parsing completed successfully');
+    console.log(`Found skills: ${parsedData.skills.length}, experience entries: ${parsedData.experience.length}`);
+    
+    return parsedData;
   } catch (error) {
     console.error('Parse resume error:', error);
     // Return empty structure if parsing fails

@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AuthContext from '../contexts/AuthContext';
 import UserContext from '../contexts/UserContext';
 
@@ -32,6 +33,36 @@ const CandidateDashboard = () => {
               ></div>
             </div>
           </div>
+        ) : resume && (!userProfile?.targetCompanies || userProfile.targetCompanies.length === 0) ? (
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="text-blue-800 font-medium mb-2">
+              Your resume has been uploaded! 🎉
+            </p>
+            <p className="text-gray-700 mb-4">
+              Your next step is to add target companies so we can create a personalized roadmap for your career.
+            </p>
+            <Link 
+              to="/candidate/target-companies" 
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Add Target Companies
+            </Link>
+          </div>
+        ) : resume ? (
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <p className="text-yellow-800 font-medium mb-2">
+              Almost there!
+            </p>
+            <p className="text-gray-700 mb-4">
+              You've uploaded your resume and set your target companies. Now generate your career roadmap!
+            </p>
+            <Link 
+              to="/candidate/roadmap" 
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Generate Roadmap
+            </Link>
+          </div>
         ) : (
           <p className="text-gray-600">
             You haven't created a roadmap yet. Upload your resume and set your target companies to get started.
@@ -44,20 +75,29 @@ const CandidateDashboard = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="space-y-4">
-            <a href="/candidate/resume" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+            <Link to="/candidate/resume" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
               Upload or Update Resume
-            </a>
-            <a href="/candidate/roadmap" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+            </Link>
+            <Link to="/candidate/target-companies" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+              Manage Target Companies
+            </Link>
+            <Link to="/candidate/roadmap" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
               View Career Roadmap
-            </a>
-            <a href="/candidate/profile" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+            </Link>
+            <Link to="/candidate/profile" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
               Edit Profile
-            </a>
+            </Link>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Target Companies</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Target Companies</h2>
+            <Link to="/candidate/target-companies" className="text-blue-600 hover:text-blue-800">
+              Manage Companies
+            </Link>
+          </div>
+          
           {userProfile?.targetCompanies?.length > 0 ? (
             <ul className="space-y-2">
               {userProfile.targetCompanies.map((target, index) => (
@@ -70,9 +110,17 @@ const CandidateDashboard = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-600">
-              You haven't added any target companies yet. Add them in your profile.
-            </p>
+            <div className="text-center py-6">
+              <p className="text-gray-600 mb-4">
+                You haven't added any target companies yet.
+              </p>
+              <Link 
+                to="/candidate/target-companies" 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Target Companies
+              </Link>
+            </div>
           )}
         </div>
       </div>
