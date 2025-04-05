@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start-server": "cd server && npm run dev",
+    "start-all": "npm run start-server & npm run dev",
+    "test-api": "curl -v http://localhost:5005/api/test",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

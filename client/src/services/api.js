@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: '/api',  // Use relative URL for proxy
   headers: {
     'Content-Type': 'application/json'
   }
@@ -15,6 +15,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Debug info
+    console.log(`Making ${config.method.toUpperCase()} request to: ${config.baseURL}${config.url}`);
     
     // Don't override Content-Type if it's multipart/form-data
     // This is needed for file uploads as axios sets the boundary automatically

@@ -83,7 +83,10 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('Attempting login with email:', email);
       const response = await api.post('/auth/login', { email, password });
+      
+      console.log('Login successful, response data:', response.data);
       
       // Save token to localStorage
       localStorage.setItem('token', response.data.token);
@@ -103,8 +106,25 @@ export const AuthProvider = ({ children }) => {
       
       return response.data;
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      
+      // Set appropriate error message based on response
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        setError(err.response.data?.message || `Error: ${err.response.status} ${err.response.statusText}`);
+      } else if (err.request) {
+        // The request was made but no response was received
+        setError('No response from server. Please check if the server is running.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setError(`Error: ${err.message}`);
+      }
       throw err;
     } finally {
       setLoading(false);
