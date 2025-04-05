@@ -14,12 +14,12 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
-// Handle preflight OPTIONS requests before any other middleware
+// Special handler for OPTIONS requests (preflight)
 app.options("*", (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.sendStatus(200);
+  res.sendStatus(200); // Always respond with 200 for OPTIONS
 });
 
 // Configure CORS for all other requests
@@ -27,6 +27,12 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  
   next();
 });
 

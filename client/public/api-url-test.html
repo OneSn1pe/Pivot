@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API URL Test</title>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Mirror the getBaseURL function from api.js for testing
+      function getBaseURL() {
+        // If we're on Vercel, try to construct the API URL
+        const hostname = window.location.hostname;
+        
+        if (hostname === "localhost" || hostname === "127.0.0.1") {
+          const localUrl = "http://localhost:5005/api";
+          document.getElementById("detection-method").textContent = "Local Development";
+          return localUrl;
+        }
+        
+        if (hostname.includes("vercel.app")) {
+          // Extract the project name from the hostname
+          const projectName = hostname.split(".")[0];
+          if (projectName) {
+            const vercelUrl = `https://${projectName}.vercel.app/api`;
+            document.getElementById("detection-method").textContent = "Vercel Domain Detection";
+            return vercelUrl;
+          }
+        }
+        
+        // Fallback to the latest known API URL
+        const fallbackUrl = "https://pivotai-mow64b3ec-kaustubh-kislays-projects.vercel.app/api";
+        document.getElementById("detection-method").textContent = "Fallback URL";
+        return fallbackUrl;
+      }
+      
+      // Display the detected URL
+      const detectedUrl = getBaseURL();
+      document.getElementById("detected-url").textContent = detectedUrl;
+      
+      // Display the current hostname for debugging
+      document.getElementById("current-hostname").textContent = window.location.hostname;
+    });
+  </script>
+</head>
+<body>
+  <h1>API URL Detection Test</h1>
+  
+  <h2>Current Hostname:</h2>
+  <pre id="current-hostname">Unknown</pre>
+  
+  <h2>Detected API URL:</h2>
+  <pre id="detected-url" style="background-color: #afa; padding: 10px;">Not detected yet</pre>
+  
+  <h2>Detection Method:</h2>
+  <pre id="detection-method">Unknown</pre>
+  
+  <p>
+    <strong>Note:</strong> This page tests the logic used to detect the API URL dynamically.
+  </p>
+</body>
+</html>

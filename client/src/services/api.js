@@ -1,8 +1,39 @@
 import axios from 'axios';
 
-// Create axios instance with default config
+// Function to determine the API base URL
+const getBaseURL = () => {
+  // First, check for the environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If not found, try to construct from current window location
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If we're on localhost, use local development server
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5005/api';
+    }
+    
+    // If we're on Netlify
+    if (hostname.includes('netlify.app')) {
+      // For Netlify, construct the API URL
+      const siteName = hostname.split('.')[0];
+      if (siteName) {
+        // We can use Netlify Functions as API endpoints
+        return `https://${siteName}.netlify.app/.netlify/functions`;
+      }
+    }
+  }
+  
+  // Fallback to a default API URL (for Netlify)
+  return '/.netlify/functions';
+};
+
+// Create axios instance with dynamic config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json'
   }

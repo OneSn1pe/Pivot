@@ -3,6 +3,11 @@ const User = require('../models/User');
 
 // Protect routes - verify JWT token
 exports.protect = async (req, res, next) => {
+  // Allow OPTIONS requests to pass through without authentication
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  
   try {
     let token;
 
@@ -41,6 +46,11 @@ exports.protect = async (req, res, next) => {
 // Role-based authorization
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    // Allow OPTIONS requests to pass through without authorization
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+    
     if (!req.user) {
       return res.status(401).json({ message: 'Not authorized' });
     }
