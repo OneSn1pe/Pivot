@@ -12,14 +12,12 @@ PivotAI is a platform that uses AI to create personalized career roadmaps for so
 - Identify target companies and positions
 - Receive personalized roadmaps with timelines and milestones
 - Track progress and update milestones as you go
-- Connect with recruiters who can provide incentives/sponsorships
 
 ### For Recruiters:
 - Create a company profile
 - Access candidates who have listed your company as a target
 - Define job positions and requirements
 - Bookmark and monitor candidate progress
-- Provide incentives to promising candidates
 
 ## Tech Stack
 
@@ -89,63 +87,7 @@ PivotAI is a platform that uses AI to create personalized career roadmaps for so
    - Backend API: http://localhost:5000
    - MongoDB: localhost:27017
 
-## Project Structure
 
-```
-pivot-ai/
-│
-├── client/                      # Frontend code
-│   ├── public/                  # Static files
-│   └── src/
-│       ├── components/          # React components
-│       ├── contexts/            # React contexts
-│       ├── pages/               # Page components
-│       ├── services/            # API service functions
-│       └── ...
-│
-├── server/                      # Backend code
-│   ├── src/
-│   │   ├── controllers/         # Route controllers
-│   │   ├── models/              # Database models
-│   │   ├── middleware/          # Custom middleware
-│   │   ├── services/            # Business logic
-│   │   ├── routes/              # API routes
-│   │   └── ...
-│   └── ...
-│
-└── ...
-```
-
-## API Routes
-
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login a user
-- `GET /api/auth/me` - Get current user
-
-### Candidates
-- `GET /api/candidates/profile` - Get candidate profile
-- `PUT /api/candidates/profile` - Update candidate profile
-- `POST /api/candidates/resume` - Upload resume
-- `GET /api/candidates/resume` - Get resume
-- `PUT /api/candidates/target-companies` - Update target companies
-- `POST /api/candidates/roadmap` - Generate roadmap
-- `GET /api/candidates/roadmap` - Get roadmap
-- `PUT /api/candidates/roadmap/milestone` - Update milestone status
-
-### Recruiters
-- `GET /api/recruiters/profile` - Get recruiter profile
-- `PUT /api/recruiters/profile` - Update recruiter profile
-- `POST /api/recruiters/job-preferences` - Create job preference
-- `GET /api/recruiters/job-preferences` - Get job preferences
-- `GET /api/recruiters/candidates` - Get matching candidates
-- `POST /api/recruiters/bookmark` - Bookmark a candidate
-- `POST /api/recruiters/incentives` - Offer incentive
-
-### Roadmaps
-- `GET /api/roadmaps/:roadmapId` - Get roadmap by ID
-- `GET /api/roadmaps/:roadmapId/progress` - Score roadmap progress
-- `POST /api/roadmaps/compatibility/:candidateId` - Check candidate compatibility
 
 ## Contributing
 
