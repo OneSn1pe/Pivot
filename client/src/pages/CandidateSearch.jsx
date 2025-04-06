@@ -64,9 +64,32 @@ const CandidateSearch = () => {
     
     try {
       const jobPref = jobPreferences.find(jp => jp._id === selectedJobPreference);
-      if (!jobPref) return;
+      if (!jobPref) {
+        console.error('Selected job preference not found');
+        return;
+      }
       
-      const score = await scoreCandidateCompatibility(candidateId, jobPref);
+      // Format the job requirements properly for the API
+      const formattedJobRequirements = {
+        position: jobPref.position,
+        company: jobPref.company,
+        description: jobPref.description,
+        requirements: {
+          skills: jobPref.skills || [],
+          experience: jobPref.experience || [],
+          education: jobPref.education || [],
+          responsibilities: jobPref.responsibilities || []
+        }
+      };
+      
+      // Provide a fallback if job preferences are missing critical data
+      if (!formattedJobRequirements.position) formattedJobRequirements.position = "Unspecified Position";
+      if (!formattedJobRequirements.company) formattedJobRequirements.company = "Your Company";
+      if (formattedJobRequirements.requirements.skills.length === 0) {
+        console.warn('Job preference is missing skills data');
+      }
+      
+      const score = await scoreCandidateCompatibility(candidateId, formattedJobRequirements);
       
       setCompatibilityScores(prev => ({
         ...prev,
@@ -74,6 +97,37 @@ const CandidateSearch = () => {
       }));
     } catch (err) {
       console.error('Error scoring candidate:', err);
+      
+      // Provide a fallback compatibility score in case of API failure
+      if (err.response && err.response.status === 500) {
+        // Create a fallback score based on skills matching
+        const candidate = candidates.find(c => c._id === candidateId);
+        const jobPref = jobPreferences.find(jp => jp._id === selectedJobPreference);
+        
+        if (candidate && jobPref && candidate.skills && jobPref.skills) {
+          // Simple matching algorithm as fallback
+          const candidateSkills = candidate.skills.map(s => s.name.toLowerCase());
+          const jobSkills = jobPref.skills.map(s => s.toLowerCase());
+          
+          const matchingSkills = jobSkills.filter(skill => 
+            candidateSkills.some(cSkill => cSkill.includes(skill))
+          );
+          
+          const fallbackScore = {
+            matchScore: Math.round((matchingSkills.length / jobSkills.length) * 100) || 50,
+            matchingStrengths: matchingSkills,
+            gaps: jobSkills.filter(skill => !matchingSkills.includes(skill)),
+            analysis: "This is an estimated score based on skill matching due to server processing limitations."
+          };
+          
+          setCompatibilityScores(prev => ({
+            ...prev,
+            [candidateId]: fallbackScore
+          }));
+          
+          console.warn('Using fallback compatibility score due to API error');
+        }
+      }
     }
   };
   
@@ -246,35 +300,47 @@ const CandidateSearch = () => {
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-semibold text-blue-800">Compatibility Score</h3>
                   <span className="text-lg font-bold text-blue-800">
-                    {compatibilityScores[selectedCandidate._id].matchScore}%
+                    {compatibilityScores[selectedCandidate._id].matchScore || 0}%
                   </span>
                 </div>
                 
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                   <div 
                     className="bg-blue-600 h-2.5 rounded-full" 
-                    style={{ width: `${compatibilityScores[selectedCandidate._id].matchScore}%` }}
+                    style={{ width: `${compatibilityScores[selectedCandidate._id].matchScore || 0}%` }}
                   ></div>
                 </div>
                 
                 <div className="text-sm">
-                  <div className="mb-2">
-                    <h4 className="font-medium text-blue-800">Strengths:</h4>
-                    <ul className="list-disc list-inside pl-2">
-                      {compatibilityScores[selectedCandidate._id].matchingStrengths.map((strength, i) => (
-                        <li key={i}>{strength}</li>
-                      ))}
-                    </ul>
-                  </div>
+                  {compatibilityScores[selectedCandidate._id].matchingStrengths && 
+                  compatibilityScores[selectedCandidate._id].matchingStrengths.length > 0 && (
+                    <div className="mb-2">
+                      <h4 className="font-medium text-blue-800">Strengths:</h4>
+                      <ul className="list-disc list-inside pl-2">
+                        {compatibilityScores[selectedCandidate._id].matchingStrengths.map((strength, i) => (
+                          <li key={i}>{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   
-                  <div className="mb-2">
-                    <h4 className="font-medium text-blue-800">Gaps:</h4>
-                    <ul className="list-disc list-inside pl-2">
-                      {compatibilityScores[selectedCandidate._id].gaps.map((gap, i) => (
-                        <li key={i}>{gap}</li>
-                      ))}
-                    </ul>
-                  </div>
+                  {compatibilityScores[selectedCandidate._id].gaps && 
+                  compatibilityScores[selectedCandidate._id].gaps.length > 0 && (
+                    <div className="mb-2">
+                      <h4 className="font-medium text-blue-800">Gaps:</h4>
+                      <ul className="list-disc list-inside pl-2">
+                        {compatibilityScores[selectedCandidate._id].gaps.map((gap, i) => (
+                          <li key={i}>{gap}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {compatibilityScores[selectedCandidate._id].analysis && (
+                    <div className="mt-2 p-2 bg-blue-100 rounded">
+                      <p className="text-xs italic">{compatibilityScores[selectedCandidate._id].analysis}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -859,13 +925,13 @@ const CandidateSearch = () => {
                     
                     {compatibilityScores[candidate._id] && (
                       <span className={`px-2 py-1 rounded text-xs ${
-                        compatibilityScores[candidate._id].matchScore >= 70
+                        (compatibilityScores[candidate._id].matchScore || 0) >= 70
                           ? 'bg-green-100 text-green-800'
-                          : compatibilityScores[candidate._id].matchScore >= 40
+                          : (compatibilityScores[candidate._id].matchScore || 0) >= 40
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                       }`}>
-                        {compatibilityScores[candidate._id].matchScore}% Match
+                        {compatibilityScores[candidate._id].matchScore || 0}% Match
                       </span>
                     )}
                   </div>
