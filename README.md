@@ -87,16 +87,6 @@ PivotAI is a platform that uses AI to create personalized career roadmaps for so
    - Backend API: http://localhost:5000
    - MongoDB: localhost:27017
 
-
-
-## Contributing
-
-This is a hackathon project. If you'd like to contribute, please fork the repository and create a pull request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Acknowledgments
 
 - OpenAI for GPT-4o API
